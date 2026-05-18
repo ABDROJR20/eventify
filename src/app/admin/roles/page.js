@@ -1,56 +1,42 @@
-import { LayoutDashboard, Home, Calendar, UserCog, ShieldCheck, AlertCircle, Settings2, Shield, Plus, Edit2, Trash2 } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import AdminSidebar from "@/components/AdminSidebar";
+import { ShieldCheck, Plus, Edit2, Trash2, Menu } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AdminRoles() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
-    <main className="min-h-screen bg-slate-50 flex">
-      {/* Admin Sidebar */}
-      <aside className="w-72 bg-slate-950 text-white flex flex-col p-8 h-screen fixed top-0 left-0 z-20 shadow-2xl shadow-blue-900/20">
-        <Link href="/">
-          <div className="flex items-center gap-3 mb-12 cursor-pointer group">
-            <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
-              <Shield size={28} color="white" />
-            </div>
-            <h1 className="text-2xl font-black tracking-tighter">Eventify <span className="text-brand-blue">Admin</span></h1>
-          </div>
-        </Link>
-        <nav className="flex-1 space-y-3">
-          <AdminNavItem icon={<LayoutDashboard size={20} />} label="Overview" href="/admin" />
-          <AdminNavItem icon={<Home size={20} />} label="Back to Portal" href="/portal" />
-          <AdminNavItem icon={<Calendar size={20} />} label="All Events" href="/admin/events" />
-          <AdminNavItem icon={<UserCog size={20} />} label="User Management" href="/admin/users" />
-          <AdminNavItem icon={<ShieldCheck size={20} />} label="Role Access" active href="/admin/roles" />
-          <AdminNavItem icon={<AlertCircle size={20} />} label="System Alerts" href="/admin/alerts" />
-          <AdminNavItem icon={<Settings2 size={20} />} label="Global Settings" href="/admin/settings" />
-        </nav>
-        <div className="mt-auto border-t border-slate-800/50 pt-8">
-          <Link href="/auth">
-            <div className="bg-white/5 backdrop-blur-md rounded-[1.5rem] p-4 flex items-center gap-4 border border-white/5 hover:bg-white/10 transition-all cursor-pointer">
-              <div className="w-10 h-10 bg-brand-blue/20 rounded-full flex items-center justify-center text-brand-blue font-black border border-brand-blue/30">
-                AD
-              </div>
-              <div>
-                <p className="font-bold text-sm text-white">System Admin</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sign Out</p>
-              </div>
-            </div>
-          </Link>
-        </div>
-      </aside>
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
+      <AdminSidebar activePage="roles" isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className="flex-1 p-12 overflow-y-auto ml-72">
-        <header className="flex justify-between items-center mb-12">
-          <div>
-            <h2 className="text-4xl font-black text-slate-900 tracking-tight">Role Access Controls</h2>
-            <p className="text-slate-500 font-medium text-lg mt-1">Configure permissions and access levels for administrative staff.</p>
+      <div className="flex-1 p-6 lg:p-12 overflow-y-auto lg:ml-72 w-full overflow-x-hidden">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+          <div className="flex items-center gap-4">
+            <button 
+              className="lg:hidden p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 shrink-0 shadow-sm transition-all active:scale-95"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <div>
+              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Role Access Controls</h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm sm:text-lg mt-1">Configure permissions and access levels for administrative staff.</p>
+            </div>
           </div>
-          <Button className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold rounded-xl h-12 shadow-xl shadow-blue-500/20 px-6">
-            <Plus size={18} className="mr-2" /> Add Custom Role
-          </Button>
+          <div className="flex gap-3 w-full sm:w-auto items-center shrink-0">
+            <Button className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold rounded-xl h-12 shadow-xl shadow-blue-500/20 px-6 shrink-0 flex-1 sm:flex-initial justify-center">
+              <Plus size={18} className="mr-2" /> Add Custom Role
+            </Button>
+            <ThemeToggle />
+          </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -81,44 +67,33 @@ export default function AdminRoles() {
   );
 }
 
-function AdminNavItem({ icon, label, active = false, href = "#" }) {
-  return (
-    <Link href={href} className="block">
-      <div className={`flex items-center gap-4 px-6 py-4 rounded-[1.25rem] cursor-pointer transition-all duration-300 group ${active ? 'bg-brand-blue text-white shadow-2xl shadow-blue-500/40 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
-        <span className={`${active ? 'text-white' : 'text-slate-500 group-hover:text-brand-blue'} transition-colors`}>{icon}</span>
-        <span className="tracking-tight">{label}</span>
-      </div>
-    </Link>
-  );
-}
-
 function RoleCard({ title, desc, users, permissions, color }) {
   return (
-    <Card className="rounded-[2.5rem] shadow-xl shadow-slate-200/50 border-none overflow-hidden bg-white hover:-translate-y-2 transition-transform duration-500 flex flex-col">
+    <Card className="rounded-[2.5rem] shadow-xl dark:shadow-none border-none dark:border dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 hover:-translate-y-2 transition-all duration-300 flex flex-col">
       <div className={`h-3 w-full ${color}`}></div>
       <CardHeader className="p-8 pb-4">
         <div className="flex justify-between items-start mb-2">
-          <CardTitle className="text-2xl font-black text-slate-900">{title}</CardTitle>
-          <Badge variant="outline" className="font-bold text-slate-500 border-slate-200">{users} Users</Badge>
+          <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">{title}</CardTitle>
+          <Badge variant="outline" className="font-bold text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800">{users} Users</Badge>
         </div>
-        <p className="text-sm text-slate-500 font-medium leading-relaxed">{desc}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">{desc}</p>
       </CardHeader>
       <CardContent className="p-8 pt-0 flex-1 flex flex-col">
         <div className="mb-6 flex-1">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Included Permissions</p>
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-widest mb-4">Included Permissions</p>
           <ul className="space-y-3">
             {permissions.map((p, i) => (
-              <li key={i} className="flex items-center gap-3 text-sm font-bold text-slate-700">
+              <li key={i} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-300">
                 <ShieldCheck size={16} className={color.replace('bg-', 'text-')} /> {p}
               </li>
             ))}
           </ul>
         </div>
-        <div className="flex gap-2 pt-6 border-t border-slate-100">
-          <Button variant="outline" className="flex-1 rounded-xl font-bold text-slate-600 hover:text-brand-blue hover:bg-blue-50 border-slate-200">
+        <div className="flex gap-2 pt-6 border-t border-slate-100 dark:border-slate-850">
+          <Button variant="outline" className="flex-1 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-slate-800/40 border-slate-200 dark:border-slate-800 h-11">
             <Edit2 size={16} className="mr-2" /> Edit
           </Button>
-          <Button variant="outline" size="icon" className="rounded-xl text-rose-500 hover:bg-rose-50 hover:text-rose-600 border-slate-200">
+          <Button variant="outline" size="icon" className="rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 border-slate-200 dark:border-slate-800 h-11 w-11 shrink-0">
             <Trash2 size={16} />
           </Button>
         </div>

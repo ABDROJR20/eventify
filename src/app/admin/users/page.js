@@ -1,72 +1,56 @@
-import { LayoutDashboard, Home, Calendar, UserCog, ShieldCheck, AlertCircle, Settings2, Search, MoreVertical, Shield, ShieldAlert, Mail } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
+import { useState } from "react";
+import AdminSidebar from "@/components/AdminSidebar";
+import { Search, MoreVertical, ShieldAlert, Mail, Menu } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AdminUsers() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
-    <main className="min-h-screen bg-slate-50 flex">
-      {/* Admin Sidebar */}
-      <aside className="w-72 bg-slate-950 text-white flex flex-col p-8 h-screen fixed top-0 left-0 z-20 shadow-2xl shadow-blue-900/20">
-        <Link href="/">
-          <div className="flex items-center gap-3 mb-12 cursor-pointer group">
-            <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
-              <Shield size={28} color="white" />
-            </div>
-            <h1 className="text-2xl font-black tracking-tighter">Eventify <span className="text-brand-blue">Admin</span></h1>
-          </div>
-        </Link>
-        <nav className="flex-1 space-y-3">
-          <AdminNavItem icon={<LayoutDashboard size={20} />} label="Overview" href="/admin" />
-          <AdminNavItem icon={<Home size={20} />} label="Back to Portal" href="/portal" />
-          <AdminNavItem icon={<Calendar size={20} />} label="All Events" href="/admin/events" />
-          <AdminNavItem icon={<UserCog size={20} />} label="User Management" active href="/admin/users" />
-          <AdminNavItem icon={<ShieldCheck size={20} />} label="Role Access" href="/admin/roles" />
-          <AdminNavItem icon={<AlertCircle size={20} />} label="System Alerts" href="/admin/alerts" />
-          <AdminNavItem icon={<Settings2 size={20} />} label="Global Settings" href="/admin/settings" />
-        </nav>
-        <div className="mt-auto border-t border-slate-800/50 pt-8">
-          <Link href="/auth">
-            <div className="bg-white/5 backdrop-blur-md rounded-[1.5rem] p-4 flex items-center gap-4 border border-white/5 hover:bg-white/10 transition-all cursor-pointer">
-              <div className="w-10 h-10 bg-brand-blue/20 rounded-full flex items-center justify-center text-brand-blue font-black border border-brand-blue/30">
-                AD
-              </div>
-              <div>
-                <p className="font-bold text-sm text-white">System Admin</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sign Out</p>
-              </div>
-            </div>
-          </Link>
-        </div>
-      </aside>
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
+      <AdminSidebar activePage="users" isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Main Content */}
-      <div className="flex-1 p-12 overflow-y-auto ml-72">
+      <div className="flex-1 p-6 lg:p-12 overflow-y-auto lg:ml-72 w-full overflow-x-hidden">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-          <div>
-            <h2 className="text-4xl font-black text-slate-900 tracking-tight">User Management</h2>
-            <p className="text-slate-500 font-medium text-lg mt-1">Manage attendees, organizers, and their platform access.</p>
-          </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <div className="relative flex-1 md:w-80">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <Input placeholder="Search by name, email..." className="pl-12 h-12 bg-white border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-blue shadow-sm border-none" />
+          <div className="flex items-center gap-4">
+            <button 
+              className="lg:hidden p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 shrink-0 shadow-sm transition-all active:scale-95"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <div>
+              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">User Management</h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm sm:text-lg mt-1">Manage attendees, organizers, and their platform access.</p>
             </div>
+          </div>
+          <div className="flex gap-3 w-full md:w-auto items-center shrink-0">
+            <div className="relative flex-1 md:w-72">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <Input placeholder="Search by name, email..." className="pl-12 h-12 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-855 rounded-xl focus:ring-2 focus:ring-brand-blue shadow-sm text-slate-900 dark:text-slate-100" />
+            </div>
+            <ThemeToggle />
           </div>
         </header>
 
-        <Card className="rounded-[2.5rem] shadow-xl shadow-slate-200/50 border-none overflow-hidden bg-white">
-          <CardContent className="p-0">
+        <Card className="rounded-[2.5rem] shadow-xl dark:shadow-none border-none dark:border dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 transition-colors duration-300">
+          <CardContent className="p-0 overflow-x-auto">
             <Table>
-              <TableHeader className="bg-slate-50/50">
+              <TableHeader className="bg-slate-50/50 dark:bg-slate-950/40">
                 <TableRow className="hover:bg-transparent border-none">
-                  <TableHead className="px-10 py-6 text-slate-500 font-black uppercase text-[10px] tracking-widest">User Details</TableHead>
-                  <TableHead className="px-10 py-6 text-slate-500 font-black uppercase text-[10px] tracking-widest">Account Type</TableHead>
-                  <TableHead className="px-10 py-6 text-slate-500 font-black uppercase text-[10px] tracking-widest">Status</TableHead>
-                  <TableHead className="px-10 py-6 text-slate-500 font-black uppercase text-[10px] tracking-widest text-right">Actions</TableHead>
+                  <TableHead className="px-10 py-6 text-slate-500 dark:text-slate-400 font-black uppercase text-[10px] tracking-widest">User Details</TableHead>
+                  <TableHead className="px-10 py-6 text-slate-500 dark:text-slate-400 font-black uppercase text-[10px] tracking-widest">Account Type</TableHead>
+                  <TableHead className="px-10 py-6 text-slate-500 dark:text-slate-400 font-black uppercase text-[10px] tracking-widest">Status</TableHead>
+                  <TableHead className="px-10 py-6 text-slate-500 dark:text-slate-400 font-black uppercase text-[10px] tracking-widest text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -84,38 +68,29 @@ export default function AdminUsers() {
   );
 }
 
-function AdminNavItem({ icon, label, active = false, href = "#" }) {
-  return (
-    <Link href={href} className="block">
-      <div className={`flex items-center gap-4 px-6 py-4 rounded-[1.25rem] cursor-pointer transition-all duration-300 group ${active ? 'bg-brand-blue text-white shadow-2xl shadow-blue-500/40 font-bold' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
-        <span className={`${active ? 'text-white' : 'text-slate-500 group-hover:text-brand-blue'} transition-colors`}>{icon}</span>
-        <span className="tracking-tight">{label}</span>
-      </div>
-    </Link>
-  );
-}
-
 function UserRow({ name, email, type, status }) {
   return (
-    <TableRow className="hover:bg-slate-50/50 transition-colors border-slate-50 cursor-pointer">
-      <TableCell className="px-10 py-6 flex items-center gap-4">
-        <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`} alt={name} className="w-12 h-12 rounded-xl" />
-        <div>
-          <p className="font-black text-slate-900 text-lg tracking-tight mb-1">{name}</p>
-          <p className="text-xs font-bold text-slate-400 flex items-center gap-1"><Mail size={12} /> {email}</p>
+    <TableRow className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors border-slate-100 dark:border-slate-850 cursor-pointer">
+      <TableCell className="px-10 py-6">
+        <div className="flex items-center gap-4">
+          <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`} alt={name} className="w-12 h-12 rounded-xl shrink-0" />
+          <div>
+            <p className="font-black text-slate-900 dark:text-white text-base tracking-tight mb-0.5">{name}</p>
+            <p className="text-xs font-bold text-slate-400 dark:text-slate-550 flex items-center gap-1"><Mail size={12} /> {email}</p>
+          </div>
         </div>
       </TableCell>
       <TableCell className="px-10 py-6">
-        <Badge variant="outline" className={`px-3 py-1 border-none font-black text-[10px] uppercase tracking-widest ${type === 'Organizer' ? 'bg-purple-50 text-purple-600' : 'bg-slate-100 text-slate-600'}`}>{type}</Badge>
+        <Badge variant="outline" className={`px-3 py-1 border-none font-black text-[10px] uppercase tracking-widest ${type === 'Organizer' ? 'bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>{type}</Badge>
       </TableCell>
       <TableCell className="px-10 py-6">
         {status === 'Active' ? 
-          <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1">Active</Badge> : 
-          <Badge className="bg-rose-50 text-rose-600 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1 flex items-center gap-1 w-fit"><ShieldAlert size={12}/> Banned</Badge>
+          <Badge className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1">Active</Badge> : 
+          <Badge className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-455 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1 flex items-center gap-1 w-fit"><ShieldAlert size={12}/> Banned</Badge>
         }
       </TableCell>
       <TableCell className="px-10 py-6 text-right space-x-2">
-        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-brand-blue hover:bg-blue-50 rounded-xl">
+        <Button variant="ghost" size="icon" className="text-slate-400 dark:text-slate-500 hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl">
           <MoreVertical size={18} />
         </Button>
       </TableCell>
