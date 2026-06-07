@@ -254,7 +254,7 @@ export default function Home() {
             </div>
             <div className="bg-white dark:bg-slate-950 p-4 sm:p-6 min-h-[320px]">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-6">
-                {[["2,840","Total Attendees","brand-blue"],["142","Active Events","brand-green"],["98%","Check-in Rate","violet-500"],["$48k","Revenue","orange-500"]].map(([val,label,color])=>(
+                {[["2,840","Total Attendees","brand-blue"],["142","Active Events","brand-green"],["98%","Check-in Rate","violet-500"],["PKR 48k","Revenue","orange-500"]].map(([val,label,color])=>(
                   <div key={label} className="bg-slate-50 dark:bg-slate-900 rounded-xl p-2 sm:p-4 border border-slate-100 dark:border-slate-800/40 flex flex-col justify-center text-center min-w-0">
                     <p className={`text-lg sm:text-2xl font-black text-${color} truncate`}>{val}</p>
                     <p className="text-slate-400 dark:text-slate-500 text-[9px] sm:text-xs mt-0.5 leading-tight break-words">{label}</p>

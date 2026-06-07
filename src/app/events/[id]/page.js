@@ -178,7 +178,7 @@ export default function EventDetails({ params }) {
               >
                 <div className="flex justify-between items-center mb-3">
                   <span className={`font-black uppercase text-xs tracking-widest ${selectedTicket === 'vip' ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400'}`}>VIP Experience</span>
-                  <span className={`font-black text-xl sm:text-2xl ${selectedTicket === 'vip' ? 'text-brand-purple' : 'text-slate-600 dark:text-slate-400'}`}>$199.00</span>
+                  <span className={`font-black text-xl sm:text-2xl ${selectedTicket === 'vip' ? 'text-brand-purple' : 'text-slate-600 dark:text-slate-400'}`}>PKR 199.00</span>
                 </div>
                 <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">Includes premium seating, exclusive networking, and VIP lunch.</p>
               </div>
@@ -293,7 +293,7 @@ export default function EventDetails({ params }) {
               <div className="pt-4 mt-6 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex justify-between items-center mb-6">
                   <span className="font-black text-slate-500 dark:text-slate-400 uppercase text-xs tracking-widest">Total Amount</span>
-                  <span className="font-black text-2xl text-slate-900 dark:text-white">{selectedTicket === 'vip' ? '$199.00' : event.price}</span>
+                  <span className="font-black text-2xl text-slate-900 dark:text-white">{selectedTicket === 'vip' ? 'PKR 199.00' : event.price}</span>
                 </div>
                 <Button type="submit" className="w-full bg-brand-blue hover:bg-blue-600 text-white h-14 sm:h-16 rounded-xl sm:rounded-2xl font-black text-base sm:text-lg shadow-xl shadow-brand-blue/20 transition-all">
                   Proceed to Payment

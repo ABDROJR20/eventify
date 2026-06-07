@@ -269,7 +269,7 @@ export default function CheckoutPage({ params }) {
               </div>
               <div className="flex justify-between">
                 <span>Service Fee</span>
-                <span className="text-slate-900 dark:text-white">$0.00</span>
+                <span className="text-slate-900 dark:text-white">PKR 0.00</span>
               </div>
             </div>
 

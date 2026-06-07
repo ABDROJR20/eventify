@@ -26,7 +26,7 @@ export default function MyEvents() {
       status: "Published",
       image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop",
       ticketsSold: "425",
-      revenue: "$20,825",
+      revenue: "PKR 20,825",
       trend: "+12%"
     },
     {
@@ -37,7 +37,7 @@ export default function MyEvents() {
       status: "Draft",
       image: "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop",
       ticketsSold: "0",
-      revenue: "$0",
+      revenue: "PKR 0",
       trend: "0%"
     },
     {
@@ -48,7 +48,7 @@ export default function MyEvents() {
       status: "Published",
       image: "https://images.unsplash.com/photo-1591115765373-5207764f72e7?q=80&w=2070&auto=format&fit=crop",
       ticketsSold: "180",
-      revenue: "$4,500",
+      revenue: "PKR 4,500",
       trend: "+5%"
     },
     {
@@ -59,7 +59,7 @@ export default function MyEvents() {
       status: "Past",
       image: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?q=80&w=2070&auto=format&fit=crop",
       ticketsSold: "310",
-      revenue: "$15,500",
+      revenue: "PKR 15,500",
       trend: "+8%"
     },
     {
@@ -70,7 +70,7 @@ export default function MyEvents() {
       status: "Published",
       image: "https://images.unsplash.com/photo-1556761175-4b46a572b786?q=80&w=2070&auto=format&fit=crop",
       ticketsSold: "85",
-      revenue: "$1,275",
+      revenue: "PKR 1,275",
       trend: "+2%"
     }
   ];
