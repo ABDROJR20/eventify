@@ -13,6 +13,20 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AdminEvents() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [eventsList, setEventsList] = useState([
+    { id: "EVT-9921", title: "Global Tech Summit 2026", organizer: "Mahad Yaseen", status: "Live" },
+    { id: "EVT-8834", title: "Digital Marketing Expo", organizer: "Abdullah Bin Munawar", status: "Suspended" },
+    { id: "EVT-7721", title: "AI Research Workshop", organizer: "Muhammad Umer", status: "Pending" },
+    { id: "EVT-6652", title: "Crypto & Web3 Meetup", organizer: "Aadrish Pirzado", status: "Live" },
+    { id: "EVT-5541", title: "Startup Pitch Night", organizer: "Sarah Khan", status: "Live" }
+  ]);
+
+  const updateStatus = (id, newStatus) => {
+    setEventsList(eventsList.map(e => e.id === id ? { ...e, status: newStatus } : e));
+  };
+  const deleteEvent = (id) => {
+    setEventsList(eventsList.filter(e => e.id !== id));
+  };
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
@@ -64,11 +78,16 @@ export default function AdminEvents() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <EventRow title="Global Tech Summit 2026" id="EVT-9921" organizer="Mahad Yaseen" status="Live" />
-                <EventRow title="Digital Marketing Expo" id="EVT-8834" organizer="Abdullah Bin Munawar" status="Suspended" />
-                <EventRow title="AI Research Workshop" id="EVT-7721" organizer="Muhammad Umer" status="Pending" />
-                <EventRow title="Crypto & Web3 Meetup" id="EVT-6652" organizer="Aadrish Pirzado" status="Live" />
-                <EventRow title="Startup Pitch Night" id="EVT-5541" organizer="Sarah Khan" status="Live" />
+                {eventsList.map(event => (
+                  <EventRow 
+                    key={event.id} 
+                    {...event} 
+                    onAction={(action) => {
+                      if (action === 'delete') deleteEvent(event.id);
+                      else updateStatus(event.id, action);
+                    }}
+                  />
+                ))}
               </TableBody>
             </Table>
           </CardContent>
@@ -78,7 +97,9 @@ export default function AdminEvents() {
   );
 }
 
-function EventRow({ title, id, organizer, status }) {
+function EventRow({ title, id, organizer, status, onAction }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const getStatusBadge = () => {
     if (status === 'Live') return <Badge className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1">Live</Badge>;
     if (status === 'Pending') return <Badge className="bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-450 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1">Pending Review</Badge>;
@@ -93,10 +114,30 @@ function EventRow({ title, id, organizer, status }) {
       </TableCell>
       <TableCell className="px-10 py-6 text-slate-650 dark:text-slate-300 font-bold">{organizer}</TableCell>
       <TableCell className="px-10 py-6">{getStatusBadge()}</TableCell>
-      <TableCell className="px-10 py-6 text-right space-x-2">
-        <Button variant="ghost" size="icon" className="text-slate-400 dark:text-slate-500 hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl">
+      <TableCell className="px-10 py-6 text-right space-x-2 relative">
+        <Button onClick={() => setIsMenuOpen(!isMenuOpen)} variant="ghost" size="icon" className="text-slate-400 dark:text-slate-500 hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl relative z-10">
           <MoreVertical size={18} />
         </Button>
+        {isMenuOpen && (
+          <div className="absolute right-10 top-1/2 -translate-y-1/2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
+            {status !== 'Live' && (
+              <button onClick={() => { setIsMenuOpen(false); onAction('Live'); }} className="w-full text-left px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors flex items-center gap-2 border-b border-slate-100 dark:border-slate-800">
+                <CheckCircle2 size={14} /> Approve Event
+              </button>
+            )}
+            {status !== 'Suspended' && (
+              <button onClick={() => { setIsMenuOpen(false); onAction('Suspended'); }} className="w-full text-left px-4 py-3 text-sm font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors flex items-center gap-2 border-b border-slate-100 dark:border-slate-800">
+                <XCircle size={14} /> Suspend Event
+              </button>
+            )}
+            <button onClick={() => { setIsMenuOpen(false); onAction('delete'); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2">
+              <XCircle size={14} /> Delete Event
+            </button>
+          </div>
+        )}
+        {isMenuOpen && (
+          <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)}></div>
+        )}
       </TableCell>
     </TableRow>
   );

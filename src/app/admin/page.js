@@ -39,6 +39,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AdminPanel() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [approvalsList, setApprovalsList] = useState([
+    { id: 1, title: "Global Tech Summit 2026", user: "Mahad Yaseen", date: "May 15, 2026" },
+    { id: 2, title: "Digital Marketing Expo", user: "Abdullah Bin Munawar", date: "May 14, 2026" },
+    { id: 3, title: "AI Research Workshop", user: "Muhammad Umer", date: "May 14, 2026" },
+    { id: 4, title: "Crypto & Web3 Meetup", user: "Aadrish Pirzado", date: "May 13, 2026" }
+  ]);
+
+  const handleApprovalAction = (id) => {
+    setApprovalsList(approvalsList.filter(app => app.id !== id));
+  };
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
@@ -103,10 +113,18 @@ export default function AdminPanel() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <ApprovalRow title="Global Tech Summit 2026" user="Mahad Yaseen" date="May 15, 2026" />
-                <ApprovalRow title="Digital Marketing Expo" user="Abdullah Bin Munawar" date="May 14, 2026" />
-                <ApprovalRow title="AI Research Workshop" user="Muhammad Umer" date="May 14, 2026" />
-                <ApprovalRow title="Crypto & Web3 Meetup" user="Aadrish Pirzado" date="May 13, 2026" />
+                {approvalsList.length > 0 ? approvalsList.map(app => (
+                  <ApprovalRow 
+                    key={app.id} 
+                    {...app} 
+                    onApprove={() => handleApprovalAction(app.id)} 
+                    onReject={() => handleApprovalAction(app.id)} 
+                  />
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12 text-slate-500 font-bold">No pending approvals.</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -139,7 +157,7 @@ function AdminStatCard({ label, value, trend, type }) {
   );
 }
 
-function ApprovalRow({ title, user, date }) {
+function ApprovalRow({ title, user, date, onApprove, onReject }) {
   return (
     <TableRow className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors border-slate-100 dark:border-slate-850">
       <TableCell className="px-10 py-8 font-black text-slate-900 dark:text-white text-lg tracking-tight">{title}</TableCell>
@@ -151,10 +169,10 @@ function ApprovalRow({ title, user, date }) {
       </TableCell>
       <TableCell className="px-10 py-8 text-slate-400 dark:text-slate-500 font-bold text-sm tracking-tight">{date}</TableCell>
       <TableCell className="px-10 py-8 text-right space-x-2 whitespace-nowrap">
-        <Button variant="ghost" className="text-emerald-600 dark:text-emerald-405 font-black hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl px-4">
+        <Button onClick={onApprove} variant="ghost" className="text-emerald-600 dark:text-emerald-405 font-black hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl px-4">
           <CheckCircle2 className="mr-2 h-4 w-4 shrink-0" /> Approve
         </Button>
-        <Button variant="ghost" className="text-rose-500 dark:text-rose-455 font-black hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl px-4">
+        <Button onClick={onReject} variant="ghost" className="text-rose-500 dark:text-rose-455 font-black hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl px-4">
           <XCircle className="mr-2 h-4 w-4 shrink-0" /> Reject
         </Button>
       </TableCell>

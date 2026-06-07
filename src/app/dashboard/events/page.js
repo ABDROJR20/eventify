@@ -17,7 +17,7 @@ export default function MyEvents() {
   const [analyticsEvent, setAnalyticsEvent] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const MOCK_DASHBOARD_EVENTS = [
+  const [eventsList, setEventsList] = useState([
     {
       id: 1,
       title: "Global Tech Summit 2026",
@@ -73,18 +73,23 @@ export default function MyEvents() {
       revenue: "PKR 1,275",
       trend: "+2%"
     }
-  ];
+  ]);
+  const [activeModal, setActiveModal] = useState(null); // { type: 'share' | 'tickets', event }
 
-  const filteredEvents = MOCK_DASHBOARD_EVENTS.filter(event => {
+  const removeEvent = (id) => {
+    setEventsList(eventsList.filter(e => e.id !== id));
+  };
+
+  const filteredEvents = eventsList.filter(event => {
     if (activeTab === "All Events") return true;
     if (activeTab === "Drafts") return event.status === "Draft";
     return event.status === activeTab;
   });
 
   const getCount = (status) => {
-    if (status === "All Events") return MOCK_DASHBOARD_EVENTS.length;
-    if (status === "Drafts") return MOCK_DASHBOARD_EVENTS.filter(e => e.status === "Draft").length;
-    return MOCK_DASHBOARD_EVENTS.filter(e => e.status === status).length;
+    if (status === "All Events") return eventsList.length;
+    if (status === "Drafts") return eventsList.filter(e => e.status === "Draft").length;
+    return eventsList.filter(e => e.status === status).length;
   };
   
   return (
@@ -191,6 +196,10 @@ export default function MyEvents() {
                 trend={event.trend}
                 onEdit={() => setEditingEvent(event)}
                 onAnalytics={() => setAnalyticsEvent(event)}
+                onAction={(action) => {
+                  if (action === 'delete') removeEvent(event.id);
+                  else setActiveModal({ type: action, event });
+                }}
               />
             ))
           ) : (
@@ -303,6 +312,65 @@ export default function MyEvents() {
           </div>
         </div>
       )}
+
+      {/* Share / Tickets Modal */}
+      {activeModal && activeModal.type === 'share' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md transition-opacity animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300 relative border border-slate-200 dark:border-slate-800 text-center">
+            <button onClick={() => setActiveModal(null)} className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+              <X size={20} />
+            </button>
+            <div className="w-16 h-16 rounded-full bg-brand-blue/10 flex items-center justify-center mx-auto mb-6 text-brand-blue">
+              <Share2 size={24} />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Share Event</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6">Share <span className="font-bold text-slate-900 dark:text-white">{activeModal.event.title}</span> with your audience to boost sales.</p>
+            
+            <div className="flex bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-6">
+              <input type="text" readOnly value={`https://eventify.com/e/${activeModal.event.id}`} className="flex-1 bg-transparent px-4 text-sm font-medium text-slate-600 dark:text-slate-300 outline-none" />
+              <button className="bg-slate-200 dark:bg-slate-800 px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">Copy</button>
+            </div>
+
+            <Button onClick={() => setActiveModal(null)} className="w-full h-12 rounded-xl font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900">Done</Button>
+          </div>
+        </div>
+      )}
+
+      {activeModal && activeModal.type === 'tickets' && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md transition-opacity animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300 relative border border-slate-200 dark:border-slate-800">
+            <button onClick={() => setActiveModal(null)} className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+              <X size={20} />
+            </button>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-brand-blue/10 text-brand-blue flex items-center justify-center">
+                <Ticket size={18} />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Manage Tickets</h3>
+            </div>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6">Settings for <span className="font-bold text-slate-900 dark:text-white">{activeModal.event.title}</span>.</p>
+            
+            <div className="space-y-4 mb-8">
+              <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div>
+                  <p className="font-bold text-sm text-slate-900 dark:text-white">Sales Active</p>
+                  <p className="text-xs text-slate-500">Allow users to buy tickets</p>
+                </div>
+                <div className="w-10 h-5 bg-brand-blue rounded-full relative cursor-pointer"><div className="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></div></div>
+              </div>
+              <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div>
+                  <p className="font-bold text-sm text-slate-900 dark:text-white">Require Approval</p>
+                  <p className="text-xs text-slate-500">Manually approve buyers</p>
+                </div>
+                <div className="w-10 h-5 bg-slate-300 dark:bg-slate-700 rounded-full relative cursor-pointer"><div className="absolute left-1 top-1 w-3 h-3 bg-white rounded-full"></div></div>
+              </div>
+            </div>
+
+            <Button onClick={() => setActiveModal(null)} className="w-full h-12 rounded-xl font-bold bg-brand-blue text-white shadow-lg shadow-brand-blue/20">Save Preferences</Button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -318,7 +386,8 @@ function Tab({ label, count, active = false, onClick }) {
   );
 }
 
-function EventCard({ title, date, location, status, image, ticketsSold, revenue, trend, onEdit, onAnalytics }) {
+function EventCard({ title, date, location, status, image, ticketsSold, revenue, trend, onEdit, onAnalytics, onAction }) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const isPublished = status === "Published";
   
   return (
@@ -335,10 +404,28 @@ function EventCard({ title, date, location, status, image, ticketsSold, revenue,
           </Badge>
         </div>
         <div className="absolute top-4 right-4">
-          <Button variant="outline" size="icon" className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-900/95 backdrop-blur border-none shadow-sm hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400">
+          <Button onClick={() => setIsDropdownOpen(!isDropdownOpen)} variant="outline" size="icon" className="w-8 h-8 rounded-full bg-white/95 dark:bg-slate-900/95 backdrop-blur border-none shadow-sm hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400">
             <MoreHorizontal size={16} />
           </Button>
+
+          {isDropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
+              <button onClick={() => { setIsDropdownOpen(false); onAction('share'); }} className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                <Share2 size={14} /> Share Event
+              </button>
+              <button onClick={() => { setIsDropdownOpen(false); onAction('tickets'); }} className="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                <Ticket size={14} /> Manage Tickets
+              </button>
+              <button onClick={() => { setIsDropdownOpen(false); onAction('delete'); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2">
+                <X size={14} /> Delete Event
+              </button>
+            </div>
+          )}
         </div>
+        
+        {isDropdownOpen && (
+          <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)}></div>
+        )}
       </div>
       <CardContent className="p-6">
         <div className="mb-6">

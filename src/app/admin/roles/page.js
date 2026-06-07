@@ -11,6 +11,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AdminRoles() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [rolesList, setRolesList] = useState([
+    { id: 1, title: "Super Admin", desc: "Full unrestricted access to all platform features and settings.", users: 3, permissions: ['System Configuration', 'Financial Reports', 'Manage Admins', 'Event Moderation', 'User Ban/Suspend'], color: "bg-brand-blue" },
+    { id: 2, title: "Moderator", desc: "Can review events, suspend users, and handle reports.", users: 12, permissions: ['Event Moderation', 'User Warning', 'View Reports', 'Customer Support', 'Content Takedown'], color: "bg-purple-500" },
+    { id: 3, title: "Finance Analyst", desc: "Read-only access to financial dashboards and payouts.", users: 5, permissions: ['Financial Reports', 'Payout Approvals', 'View Transactions', 'Export Tax Data'], color: "bg-emerald-500" }
+  ]);
+  const [activeModal, setActiveModal] = useState(null); // 'add' | { type: 'edit', role }
+
+  const removeRole = (id) => {
+    setRolesList(rolesList.filter(r => r.id !== id));
+  };
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
@@ -32,7 +42,7 @@ export default function AdminRoles() {
             </div>
           </div>
           <div className="flex gap-3 w-full sm:w-auto items-center shrink-0">
-            <Button className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold rounded-xl h-12 shadow-xl shadow-blue-500/20 px-6 shrink-0 flex-1 sm:flex-initial justify-center">
+            <Button onClick={() => setActiveModal('add')} className="bg-brand-blue hover:bg-brand-blue/90 text-white font-bold rounded-xl h-12 shadow-xl shadow-blue-500/20 px-6 shrink-0 flex-1 sm:flex-initial justify-center">
               <Plus size={18} className="mr-2" /> Add Custom Role
             </Button>
             <ThemeToggle />
@@ -40,34 +50,42 @@ export default function AdminRoles() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-          <RoleCard 
-            title="Super Admin" 
-            desc="Full unrestricted access to all platform features and settings." 
-            users={3}
-            permissions={['System Configuration', 'Financial Reports', 'Manage Admins', 'Event Moderation', 'User Ban/Suspend']}
-            color="bg-brand-blue"
-          />
-          <RoleCard 
-            title="Moderator" 
-            desc="Can review events, suspend users, and handle reports." 
-            users={12}
-            permissions={['Event Moderation', 'User Warning', 'View Reports', 'Customer Support', 'Content Takedown']}
-            color="bg-purple-500"
-          />
-          <RoleCard 
-            title="Finance Analyst" 
-            desc="Read-only access to financial dashboards and payouts." 
-            users={5}
-            permissions={['Financial Reports', 'Payout Approvals', 'View Transactions', 'Export Tax Data']}
-            color="bg-emerald-500"
-          />
+          {rolesList.map(role => (
+            <RoleCard 
+              key={role.id}
+              {...role}
+              onEdit={() => setActiveModal({ type: 'edit', role })}
+              onDelete={() => removeRole(role.id)}
+            />
+          ))}
         </div>
       </div>
+
+      {activeModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md transition-opacity animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300 relative border border-slate-200 dark:border-slate-800 text-center">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+              {activeModal === 'add' ? 'Add Custom Role' : 'Edit Role'}
+            </h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6">Configure role permissions.</p>
+            <div className="space-y-4 mb-6 text-left">
+              <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block">Role Name</label>
+                <input type="text" defaultValue={activeModal?.role?.title || ''} className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-blue" />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={() => setActiveModal(null)} variant="outline" className="flex-1 h-12 rounded-xl font-bold border-slate-200 dark:border-slate-800">Cancel</Button>
+              <Button onClick={() => setActiveModal(null)} className="flex-1 h-12 rounded-xl font-bold bg-brand-blue text-white">Save Role</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
 
-function RoleCard({ title, desc, users, permissions, color }) {
+function RoleCard({ title, desc, users, permissions, color, onEdit, onDelete }) {
   return (
     <Card className="rounded-[2.5rem] shadow-xl dark:shadow-none border-none dark:border dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 hover:-translate-y-2 transition-all duration-300 flex flex-col">
       <div className={`h-3 w-full ${color}`}></div>
@@ -90,10 +108,10 @@ function RoleCard({ title, desc, users, permissions, color }) {
           </ul>
         </div>
         <div className="flex gap-2 pt-6 border-t border-slate-100 dark:border-slate-850">
-          <Button variant="outline" className="flex-1 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-slate-800/40 border-slate-200 dark:border-slate-800 h-11">
+          <Button onClick={onEdit} variant="outline" className="flex-1 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-slate-800/40 border-slate-200 dark:border-slate-800 h-11">
             <Edit2 size={16} className="mr-2" /> Edit
           </Button>
-          <Button variant="outline" size="icon" className="rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 border-slate-200 dark:border-slate-800 h-11 w-11 shrink-0">
+          <Button onClick={onDelete} variant="outline" size="icon" className="rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600 border-slate-200 dark:border-slate-800 h-11 w-11 shrink-0">
             <Trash2 size={16} />
           </Button>
         </div>

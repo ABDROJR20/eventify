@@ -13,6 +13,17 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AdminUsers() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [usersList, setUsersList] = useState([
+    { id: 1, name: "Mahad Yaseen", email: "mahad@eventify.com", type: "Organizer", status: "Active" },
+    { id: 2, name: "Abdullah Bin Munawar", email: "abdullah@eventify.com", type: "Organizer", status: "Active" },
+    { id: 3, name: "John Doe", email: "john.doe@example.com", type: "Attendee", status: "Active" },
+    { id: 4, name: "Spam Bot 99", email: "spam@scam.net", type: "Attendee", status: "Banned" },
+    { id: 5, name: "Sarah Khan", email: "sarah@eventify.com", type: "Organizer", status: "Active" }
+  ]);
+
+  const updateStatus = (id, newStatus) => {
+    setUsersList(usersList.map(u => u.id === id ? { ...u, status: newStatus } : u));
+  };
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
@@ -54,11 +65,16 @@ export default function AdminUsers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <UserRow name="Mahad Yaseen" email="mahad@eventify.com" type="Organizer" status="Active" />
-                <UserRow name="Abdullah Bin Munawar" email="abdullah@eventify.com" type="Organizer" status="Active" />
-                <UserRow name="John Doe" email="john.doe@example.com" type="Attendee" status="Active" />
-                <UserRow name="Spam Bot 99" email="spam@scam.net" type="Attendee" status="Banned" />
-                <UserRow name="Sarah Khan" email="sarah@eventify.com" type="Organizer" status="Active" />
+                {usersList.map(user => (
+                  <UserRow 
+                    key={user.id} 
+                    {...user} 
+                    onAction={(action) => {
+                      if (action === 'suspend') updateStatus(user.id, 'Banned');
+                      if (action === 'activate') updateStatus(user.id, 'Active');
+                    }}
+                  />
+                ))}
               </TableBody>
             </Table>
           </CardContent>
@@ -68,7 +84,8 @@ export default function AdminUsers() {
   );
 }
 
-function UserRow({ name, email, type, status }) {
+function UserRow({ name, email, type, status, onAction }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   return (
     <TableRow className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors border-slate-100 dark:border-slate-850 cursor-pointer">
       <TableCell className="px-10 py-6">
@@ -89,10 +106,26 @@ function UserRow({ name, email, type, status }) {
           <Badge className="bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-455 border-none font-black text-[10px] uppercase tracking-widest px-3 py-1 flex items-center gap-1 w-fit"><ShieldAlert size={12}/> Banned</Badge>
         }
       </TableCell>
-      <TableCell className="px-10 py-6 text-right space-x-2">
-        <Button variant="ghost" size="icon" className="text-slate-400 dark:text-slate-500 hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl">
+      <TableCell className="px-10 py-6 text-right space-x-2 relative">
+        <Button onClick={() => setIsMenuOpen(!isMenuOpen)} variant="ghost" size="icon" className="text-slate-400 dark:text-slate-500 hover:text-brand-blue hover:bg-blue-50 dark:hover:bg-slate-800 rounded-xl relative z-10">
           <MoreVertical size={18} />
         </Button>
+        {isMenuOpen && (
+          <div className="absolute right-10 top-1/2 -translate-y-1/2 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
+            {status === 'Active' ? (
+              <button onClick={() => { setIsMenuOpen(false); onAction('suspend'); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2">
+                <ShieldAlert size={14} /> Ban User
+              </button>
+            ) : (
+              <button onClick={() => { setIsMenuOpen(false); onAction('activate'); }} className="w-full text-left px-4 py-3 text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors flex items-center gap-2">
+                <ShieldAlert size={14} /> Unban User
+              </button>
+            )}
+          </div>
+        )}
+        {isMenuOpen && (
+          <div className="fixed inset-0 z-40" onClick={() => setIsMenuOpen(false)}></div>
+        )}
       </TableCell>
     </TableRow>
   );

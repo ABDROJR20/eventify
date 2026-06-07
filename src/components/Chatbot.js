@@ -6,7 +6,7 @@ export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-8 right-8 z-[100]">
+    <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-[100]">
       {/* Chat Button */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
@@ -26,7 +26,7 @@ export default function Chatbot() {
       </button>
 
       {/* Chat Window */}
-      <div className={`absolute bottom-20 right-0 w-[400px] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden transition-all duration-500 origin-bottom-right transform ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-0 opacity-0 translate-y-10 pointer-events-none'}`}>
+      <div className={`absolute bottom-20 right-0 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[400px] bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden transition-all duration-500 origin-bottom-right transform ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-0 opacity-0 translate-y-10 pointer-events-none'}`}>
         {/* Header */}
         <div className="bg-slate-900 p-6 text-white flex items-center gap-4">
           <div className="w-12 h-12 bg-brand-blue rounded-2xl flex items-center justify-center">
