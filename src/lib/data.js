@@ -1,0 +1,81 @@
+export const MOCK_EVENTS = [
+  {
+    id: 1,
+    title: "Global Tech Summit 2026",
+    category: "Technology",
+    date: "June 12, 2026",
+    time: "10:00 AM",
+    location: "Karachi Expo Center, PK",
+    price: "$49.00",
+    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80&fit=crop",
+    attendees: "500+",
+    featured: true,
+    description: "Join us for the most anticipated technology event of the year. The Global Tech Summit 2026 brings together the brightest minds in Artificial Intelligence, Machine Learning, and Software Engineering to explore the next frontier of digital innovation.",
+    speakers: ["Muhammad Umer", "Aadrish Pirzado"]
+  },
+  {
+    id: 2,
+    title: "Design Leadership Forum",
+    category: "Design",
+    date: "July 24, 2026",
+    time: "09:00 AM",
+    location: "Pearl Continental, Lahore",
+    price: "$120.00",
+    image: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=800&q=80&fit=crop",
+    attendees: "200+",
+    description: "A premier gathering of creative directors and UX leaders. We will dive deep into design systems, accessible interfaces, and the future of creative collaboration across enterprises.",
+    speakers: ["Sarah Khan", "Ali Ahmed"]
+  },
+  {
+    id: 3,
+    title: "Underground Music Festival",
+    category: "Music",
+    date: "August 05, 2026",
+    time: "06:00 PM",
+    location: "Islamabad Arts Club",
+    price: "$30.00",
+    image: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=800&q=80&fit=crop",
+    attendees: "1,200+",
+    description: "Experience the vibrant underground music scene. A night filled with indie bands, electronic artists, and immersive audio-visual performances that will keep you dancing until dawn.",
+    speakers: ["DJ Matrix", "The Wildflowers"]
+  },
+  {
+    id: 4,
+    title: "Startup Pitch Night",
+    category: "Business",
+    date: "August 15, 2026",
+    time: "05:30 PM",
+    location: "NIC Karachi",
+    price: "Free",
+    image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&q=80&fit=crop",
+    attendees: "150+",
+    description: "Watch the top 10 early-stage startups pitch their innovative ideas to a panel of esteemed investors. A great opportunity to network, find co-founders, and secure seed funding.",
+    speakers: ["Investor Panel"]
+  },
+  {
+    id: 5,
+    title: "Web3 Developer Workshop",
+    category: "Workshops",
+    date: "September 02, 2026",
+    time: "11:00 AM",
+    location: "Virtual Event",
+    price: "$15.00",
+    image: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=800&q=80&fit=crop",
+    attendees: "300+",
+    description: "A hands-on coding workshop for building decentralized applications. Learn how to write smart contracts, integrate wallets, and deploy your first DApp on the Ethereum testnet.",
+    speakers: ["Zainab Ali", "Blockchain Devs"]
+  },
+  {
+    id: 6,
+    title: "Creative Arts Biennale",
+    category: "Design",
+    date: "October 10, 2026",
+    time: "10:00 AM",
+    location: "Frere Hall, Karachi",
+    price: "Free",
+    image: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80&fit=crop",
+    attendees: "2,500+",
+    description: "A massive exhibition celebrating contemporary artists across the country. Featuring installations, live painting sessions, and panel discussions on the intersection of culture and modern art.",
+    speakers: ["Hasan Raza", "Fatima Jinnah"]
+  }
+];

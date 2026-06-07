@@ -658,13 +658,6 @@ export default function Home() {
                   href: "tel:+923259223300",
                   icon: <Phone size={22} className="text-brand-green" />,
                   bg: "bg-brand-green/10 border-brand-green/20"
-                },
-                {
-                  title: "Visit Our Office",
-                  val: "Suite # 109, Caesar tower, Shahra-e-Faisal, Fowler Lines Karachi Cantonment, Karachi, 74000, Pakistan",
-                  href: "#",
-                  icon: <MapPin size={22} className="text-violet-600" />,
-                  bg: "bg-violet-50 border-violet-200"
                 }
               ].map((item, i) => (
                 <motion.a 

@@ -34,7 +34,7 @@ function AuthContent() {
       ? "Discover incredible events, connect with passionate communities, and create unforgettable memories."
       : "Experience events like never before. From elite summits to underground concerts, architect your rhythm.",
     loginBtnText: isAttendee ? "Login to Events" : "Login to Dashboard",
-    linkPath: isAttendee ? "/events/1" : "/dashboard"
+    linkPath: isAttendee ? "/events" : "/dashboard"
   };
 
   return (
