@@ -46,6 +46,36 @@
   animation: fade-in 0.8s ease-out forwards;
 }
 
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(2deg); }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-1200 {
+  perspective: 1200px;
+}
+
+.glow-3d-blue {
+  box-shadow: 0 20px 50px -10px rgba(37, 99, 235, 0.25), 0 0 30px rgba(37, 99, 235, 0.15);
+}
+
+.glow-3d-green {
+  box-shadow: 0 20px 50px -10px rgba(16, 185, 129, 0.25), 0 0 30px rgba(16, 185, 129, 0.15);
+}
+
+
 @keyframes marquee {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
