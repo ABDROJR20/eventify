@@ -6,7 +6,6 @@ import { ArrowRight, Compass, QrCode, BarChart3, Mail, Calendar, Bell, CreditCar
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Eventify3DScene from "@/components/Eventify3DScene";
-import Global3DCanvas from "@/components/Global3DCanvas";
 import GsapBackground from "@/components/GsapBackground";
 import ThreeDCard from "@/components/ThreeDCard";
 
@@ -234,9 +233,6 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans overflow-x-hidden relative transition-colors duration-300">
 
-      {/* 🌟 GLOBAL THREE.JS 3D BACKGROUND CANVAS */}
-      <Global3DCanvas />
-
       {/* ⚡ GSAP ANIMATED BACKGROUND ORBS & GRID */}
       <GsapBackground />
 
@@ -244,7 +240,7 @@ export default function Home() {
       <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-xl border-b border-slate-200/80 dark:border-slate-800/80" : "bg-transparent"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/"><span className="text-xl font-black italic tracking-tighter text-brand-blue flex items-center gap-2"><Box size={22} className="text-brand-blue animate-pulse"/> Eventify</span></Link>
-          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-700 dark:text-slate-300">
+          <div className="hidden lg:flex items-center gap-6 xl:gap-8 text-sm font-semibold text-slate-700 dark:text-slate-300">
             {NAV_ITEMS.map(item => (
               <a 
                 key={item.href} 
@@ -255,15 +251,15 @@ export default function Home() {
               </a>
             ))}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-3">
-              <Link href="/auth"><button className="text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-brand-blue px-4 py-2 transition-colors">Sign In</button></Link>
-              <Link href="/portal"><button className="bg-brand-blue hover:bg-blue-700 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:shadow-lg hover:shadow-brand-blue/30 hover:-translate-y-0.5">Get Started</button></Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex items-center gap-2 sm:gap-3">
+              <Link href="/auth"><button className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-brand-blue px-3 sm:px-4 py-2 transition-colors">Sign In</button></Link>
+              <Link href="/portal"><button className="bg-brand-blue hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all hover:shadow-lg hover:shadow-brand-blue/30 hover:-translate-y-0.5">Get Started</button></Link>
             </div>
             
             <ThemeToggle />
             
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden text-slate-600 dark:text-slate-400 transition-transform active:scale-95">{mobileOpen ? <X size={22}/> : <Menu size={22}/>}</button>
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden text-slate-600 dark:text-slate-400 p-1.5 transition-transform active:scale-95" aria-label="Toggle Navigation Menu">{mobileOpen ? <X size={22}/> : <Menu size={22}/>}</button>
           </div>
         </div>
         <AnimatePresence>
@@ -273,7 +269,7 @@ export default function Home() {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="md:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-6 flex flex-col gap-4 shadow-lg overflow-hidden"
+              className="lg:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-6 flex flex-col gap-4 shadow-lg overflow-hidden"
             >
               {NAV_ITEMS.map(item => (
                 <a 
@@ -376,7 +372,7 @@ export default function Home() {
             <div className="bg-white dark:bg-slate-950 p-4 sm:p-6 min-h-[320px]">
               
               {/* Layered Stat Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mb-6">
                 {[
                   ["2,840","Total Attendees","text-brand-blue","bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/40"],
                   ["142","Active Events","text-emerald-600 dark:text-brand-green","bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/40"],

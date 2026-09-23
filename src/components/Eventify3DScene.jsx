@@ -234,7 +234,10 @@ export default function Eventify3DScene() {
       ctx.fillText("2026 OFFICIAL", 512, 1180);
     }
 
-    return new THREE.CanvasTexture(canvas);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.needsUpdate = true;
+    return texture;
   };
 
   // Switch Active Tab 3D Actions
@@ -310,20 +313,48 @@ export default function Eventify3DScene() {
     camera.position.set(0, 0, 8.5);
 
     // 2. WebGL Renderer
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
+    renderer.toneMappingExposure = 1.35;
     container.appendChild(renderer.domElement);
 
+    // WebGL context loss resilience
+    const handleContextLost = (e) => {
+      e.preventDefault();
+    };
+    const handleContextRestored = () => {
+      if (passMeshRef.current) {
+        const fTex = createPassTexture(false, passData);
+        const bTex = createPassTexture(true, passData);
+        passMeshRef.current.material[4].map = fTex;
+        passMeshRef.current.material[4].map.needsUpdate = true;
+        passMeshRef.current.material[5].map = bTex;
+        passMeshRef.current.material[5].map.needsUpdate = true;
+        passMeshRef.current.material.forEach((m) => { m.needsUpdate = true; });
+      }
+    };
+    renderer.domElement.addEventListener("webglcontextlost", handleContextLost);
+    renderer.domElement.addEventListener("webglcontextrestored", handleContextRestored);
+
     // 3. Lighting System (Stage & Festival Lighting)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     scene.add(ambientLight);
 
-    const mainSpot = new THREE.SpotLight(0x2563eb, 9, 22, Math.PI / 4, 0.5);
+    // Front Key Light directly illuminating the pass face
+    const frontKeyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    frontKeyLight.position.set(0, 1, 8);
+    scene.add(frontKeyLight);
+
+    // Back Key Light illuminating the reverse side
+    const backKeyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    backKeyLight.position.set(0, 1, -8);
+    scene.add(backKeyLight);
+
+    const mainSpot = new THREE.SpotLight(0x2563eb, 7, 22, Math.PI / 4, 0.5);
     mainSpot.position.set(5, 6, 6);
     mainSpot.castShadow = true;
     scene.add(mainSpot);
@@ -354,14 +385,14 @@ export default function Eventify3DScene() {
 
     const frontMaterial = new THREE.MeshStandardMaterial({
       map: frontTexture,
-      roughness: 0.15,
-      metalness: 0.2,
+      roughness: 0.3,
+      metalness: 0.05,
     });
 
     const backMaterial = new THREE.MeshStandardMaterial({
       map: backTexture,
-      roughness: 0.15,
-      metalness: 0.2,
+      roughness: 0.3,
+      metalness: 0.05,
     });
 
     const materials = [
@@ -375,7 +406,7 @@ export default function Eventify3DScene() {
 
     const passMesh = new THREE.Mesh(passGeometry, materials);
     passMesh.castShadow = true;
-    passMesh.receiveShadow = true;
+    passMesh.receiveShadow = false; // Prevent self-shadowing blackness
     passMeshRef.current = passMesh;
 
     // Laser Scanning Line Mesh (Green Glowing Beam)
@@ -535,11 +566,11 @@ export default function Eventify3DScene() {
 
     // 8. Render Loop
     let animationFrameId;
-    const clock = new THREE.Clock();
+    const startTime = Date.now();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      const elapsedTime = (Date.now() - startTime) * 0.001;
       const mult = speedMultiplierRef.current;
 
       // Continuous Idle Rotation & Floating Motion
@@ -604,29 +635,29 @@ export default function Eventify3DScene() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(37,99,235,0.18)_0%,transparent_70%)] pointer-events-none" />
 
       {/* Header Overlay Controls */}
-      <div className="relative z-10 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2.5 bg-white/80 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-200 font-bold shadow-md">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-          <span>Interactive 3D Ticket Pass Engine</span>
+      <div className="relative z-10 flex items-center justify-between flex-wrap gap-2.5">
+        <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-900/90 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-slate-200 dark:border-slate-800 text-[11px] sm:text-xs text-slate-800 dark:text-slate-200 font-bold shadow-md">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="hidden xs:inline">Interactive</span> <span>3D Pass Engine</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           {/* Live Customizer Toggle Button */}
           <button
             onClick={() => setShowCustomizer(!showCustomizer)}
-            className="flex items-center gap-1.5 bg-brand-blue/20 text-brand-blue hover:bg-brand-blue/30 border border-brand-blue/40 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all"
+            className="flex items-center gap-1.5 bg-brand-blue/20 text-brand-blue hover:bg-brand-blue/30 border border-brand-blue/40 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all"
           >
-            <Edit3 size={14} />
-            <span>Customize Card</span>
+            <Edit3 size={13} />
+            <span>Customize</span>
           </button>
 
           {/* Interactive Tab Switchers */}
-          <div className="flex items-center gap-1.5 bg-white/80 dark:bg-slate-900/90 backdrop-blur-md p-1.5 rounded-full border border-slate-200 dark:border-slate-800 shadow-md">
+          <div className="flex items-center gap-1 bg-white/80 dark:bg-slate-900/90 backdrop-blur-md p-1 rounded-full border border-slate-200 dark:border-slate-800 shadow-md">
             {["VIP Pass", "QR Check-in", "Live Orbit"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => handleTabChange(tab)}
-                className={`text-xs font-bold px-4 py-1.5 rounded-full transition-all duration-300 ${
+                className={`text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full transition-all duration-300 ${
                   activeTab === tab
                     ? "bg-brand-blue text-white shadow-lg shadow-blue-500/30 scale-105"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800/60"
@@ -648,7 +679,7 @@ export default function Eventify3DScene() {
 
       {/* Live Card Customizer Panel Drawer */}
       {showCustomizer && (
-        <div className="absolute top-20 left-6 z-30 max-w-sm w-full bg-slate-900/95 dark:bg-slate-950/95 border border-slate-700 p-5 rounded-2xl shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-left-4 duration-300">
+        <div className="absolute top-16 sm:top-20 inset-x-3 sm:inset-x-auto sm:left-6 z-30 max-w-sm w-auto sm:w-full bg-slate-900/95 dark:bg-slate-950/95 border border-slate-700 p-4 sm:p-5 rounded-2xl shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
             <h4 className="text-white font-bold text-sm flex items-center gap-2">
               <Sparkles size={16} className="text-brand-blue" /> Live 3D Pass Customizer

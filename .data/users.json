@@ -1,0 +1,46 @@
+[
+  {
+    "id": "usr_1789818771517_q5kaaa0",
+    "name": "Test Attendee",
+    "email": "test_1789818769022@example.com",
+    "password": "$2b$10$hg0qP/eJ2aB.Jq5BrAWf3u00DDybxTNpPao3hCmRqYCpcRtN.HdtO",
+    "role": "attendee",
+    "provider": "credentials",
+    "image": null,
+    "createdAt": "2026-09-19T11:52:51.518Z",
+    "updatedAt": "2026-09-19T11:53:30.859Z"
+  },
+  {
+    "id": "usr_1789818797408_t5hiqij",
+    "name": "Google User",
+    "email": "googleuser@gmail.com",
+    "password": null,
+    "role": "organizer",
+    "provider": "google",
+    "image": null,
+    "createdAt": "2026-09-19T11:53:17.408Z",
+    "updatedAt": "2026-09-19T11:53:17.408Z"
+  },
+  {
+    "id": "usr_1789818799698_q5tpfi7",
+    "name": "System Administrator",
+    "email": "admin@eventify.com",
+    "password": "$2b$10$RRZJw6iuW7OvMFlSPY5lsuW5tJUGGMVk8VTE0Pbcu0LzuVc9zzGiG",
+    "role": "admin",
+    "provider": "credentials",
+    "image": null,
+    "createdAt": "2026-09-19T11:53:19.698Z",
+    "updatedAt": "2026-09-19T11:53:19.698Z"
+  },
+  {
+    "id": "usr_1789820362394_jrijit9",
+    "name": "Hafiz Abdullah",
+    "email": "hafizabdullah.munawar786@gmail.com",
+    "password": null,
+    "role": "organizer",
+    "provider": "google",
+    "image": "https://lh3.googleusercontent.com/a/ACg8ocLnfV6v9AmZNQBy73ZJTcLI7mT5A_hfeb_2CHDLjKFRjgkLiSzw=s96-c",
+    "createdAt": "2026-09-19T12:19:22.394Z",
+    "updatedAt": "2026-09-23T19:51:54.995Z"
+  }
+]
