@@ -1,10 +1,18 @@
-import { SignJWT, jwtVerify } from "jose";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 
-const JWT_SECRET_STRING = process.env.JWT_SECRET || "eventify-super-secret-jwt-key-2026-secure-token";
-const JWT_SECRET = new TextEncoder().encode(JWT_SECRET_STRING);
+const JWT_SECRET = process.env.JWT_SECRET || "eventify-super-secret-jwt-key-2026-secure-token";
 const COOKIE_NAME = "eventify_session";
+
+// Base64Url helpers
+function base64UrlEncode(obj) {
+  return Buffer.from(typeof obj === "string" ? obj : JSON.stringify(obj)).toString("base64url");
+}
+
+function base64UrlDecode(str) {
+  return Buffer.from(str, "base64url").toString("utf8");
+}
 
 // Hash password
 export async function hashPassword(password) {
@@ -18,21 +26,53 @@ export async function comparePassword(password, hashedPassword) {
   return bcrypt.compare(password, hashedPassword);
 }
 
-// Generate JWT token
-export async function createToken(payload, expiresIn = "7d") {
-  return await new SignJWT(payload)
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(expiresIn)
-    .sign(JWT_SECRET);
+// Generate JWT token (using Node native crypto HMAC-SHA256)
+export async function createToken(payload, expiresInDays = 7) {
+  const header = { alg: "HS256", typ: "JWT" };
+  const exp = Math.floor(Date.now() / 1000) + expiresInDays * 24 * 60 * 60;
+  const fullPayload = {
+    ...payload,
+    exp,
+    iat: Math.floor(Date.now() / 1000),
+  };
+
+  const encodedHeader = base64UrlEncode(header);
+  const encodedPayload = base64UrlEncode(fullPayload);
+
+  const signature = crypto
+    .createHmac("sha256", JWT_SECRET)
+    .update(`${encodedHeader}.${encodedPayload}`)
+    .digest("base64url");
+
+  return `${encodedHeader}.${encodedPayload}.${signature}`;
 }
 
 // Verify JWT token
 export async function verifyToken(token) {
+  if (!token || typeof token !== "string") return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+
+  const [encodedHeader, encodedPayload, signature] = parts;
+
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const expectedSignature = crypto
+      .createHmac("sha256", JWT_SECRET)
+      .update(`${encodedHeader}.${encodedPayload}`)
+      .digest("base64url");
+
+    if (signature !== expectedSignature) {
+      return null;
+    }
+
+    const payload = JSON.parse(base64UrlDecode(encodedPayload));
+
+    if (payload.exp && Math.floor(Date.now() / 1000) > payload.exp) {
+      return null;
+    }
+
     return payload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
