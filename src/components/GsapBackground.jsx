@@ -69,15 +69,15 @@ export default function GsapBackground() {
       {/* GSAP Animated Floating Glow Orbs */}
       <div
         ref={orb1Ref}
-        className="absolute top-1/4 left-1/6 w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-brand-blue/30 via-indigo-500/20 to-cyan-400/20 blur-[120px]"
+        className="absolute top-1/4 left-1/6 w-[450px] h-[450px] rounded-full bg-linear-to-tr from-brand-blue/30 via-indigo-500/20 to-cyan-400/20 blur-[120px]"
       />
       <div
         ref={orb2Ref}
-        className="absolute bottom-1/4 right-1/6 w-[500px] h-[500px] rounded-full bg-gradient-to-bl from-brand-green/20 via-emerald-500/15 to-blue-600/20 blur-[140px]"
+        className="absolute bottom-1/4 right-1/6 w-[500px] h-[500px] rounded-full bg-linear-to-bl from-brand-green/20 via-emerald-500/15 to-blue-600/20 blur-[140px]"
       />
       <div
         ref={orb3Ref}
-        className="absolute top-2/3 left-1/3 w-[380px] h-[380px] rounded-full bg-gradient-to-r from-purple-600/20 to-pink-500/15 blur-[110px]"
+        className="absolute top-2/3 left-1/3 w-[380px] h-[380px] rounded-full bg-linear-to-r from-purple-600/20 to-pink-500/15 blur-[110px]"
       />
 
       {/* GSAP Animated Subtle Grid Overlay */}

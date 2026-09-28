@@ -106,7 +106,7 @@ export default function Chatbot() {
           }`}
       >
         {/* Header */}
-        <div className="shrink-0 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-5 py-4 text-white flex items-center justify-between border-b border-slate-800">
+        <div className="shrink-0 bg-linear-to-r from-slate-900 via-slate-900 to-slate-950 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 px-5 py-4 text-white flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
               <Sparkles size={20} className="text-white" />
@@ -148,7 +148,7 @@ export default function Chatbot() {
               return (
                 <div
                   key={m.id}
-                  className="bg-white dark:bg-slate-900 p-4 rounded-2xl rounded-tl-xs shadow-sm max-w-[88%] border border-emerald-500/30 dark:border-emerald-500/20 bg-gradient-to-br from-emerald-50/50 to-white dark:from-emerald-950/30 dark:to-slate-900"
+                  className="bg-white dark:bg-slate-900 p-4 rounded-2xl rounded-tl-xs shadow-sm max-w-[88%] border border-emerald-500/30 dark:border-emerald-500/20 bg-linear-to-br from-emerald-50/50 to-white dark:from-emerald-950/30 dark:to-slate-900"
                 >
                   <div className="flex items-center gap-1.5 mb-2">
                     <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />

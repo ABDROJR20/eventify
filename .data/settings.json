@@ -1,0 +1,33 @@
+{
+  "organizerName": "Aadrish Pirzado",
+  "companyName": "Eventify Innovations",
+  "email": "aadrish@example.com",
+  "phone": "+92 300 9876543",
+  "bio": "Lead event producer organizing elite tech, design, and developer experiences worldwide.",
+  "website": "https://eventify.pk",
+  "avatarUrl": "https://i.pravatar.cc/150?u=organizer",
+  "payoutMethods": {
+    "bankAccount": {
+      "accountTitle": "Aadrish Pirzado",
+      "bankName": "Habib Bank Limited (HBL)",
+      "accountNumber": "PK36HABB0001234567890123",
+      "isDefault": true
+    },
+    "jazzCash": {
+      "accountNumber": "+92 300 9876543",
+      "accountName": "Aadrish Pirzado",
+      "isDefault": false
+    },
+    "easyPaisa": {
+      "accountNumber": "+92 300 9876543",
+      "accountName": "Aadrish Pirzado",
+      "isDefault": false
+    }
+  },
+  "notifications": {
+    "emailOnNewTicket": true,
+    "emailOnCheckIn": false,
+    "dailySummary": true,
+    "smsAlerts": false
+  }
+}

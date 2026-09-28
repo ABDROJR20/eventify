@@ -1,9 +1,59 @@
 "use client";
 
-import { LayoutDashboard, Home, Calendar, Ticket, Users, TrendingUp, Settings, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { LayoutDashboard, Home, Calendar, Ticket, Users, TrendingUp, Settings, X, LogOut, User } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Sidebar({ activePage, isOpen, onClose }) {
+  const router = useRouter();
+  const [user, setUser] = useState({
+    name: "Organizer Account",
+    email: "organizer@eventify.pk",
+    image: null,
+  });
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    // Fetch logged in user from /api/auth/me
+    async function fetchSession() {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          setUser({
+            name: data.user.name || "Organizer",
+            email: data.user.email || "",
+            image: data.user.image || null,
+          });
+        }
+      } catch (err) {
+        console.warn("Could not load session user:", err);
+      }
+    }
+    fetchSession();
+  }, []);
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/auth");
+      router.refresh();
+    } catch (err) {
+      router.push("/auth");
+    }
+  };
+
+  // Generate initials for avatar fallback
+  const initials = (user.name || "User")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <>
       {/* Sidebar Overlay for Mobile */}
@@ -35,16 +85,32 @@ export default function Sidebar({ activePage, isOpen, onClose }) {
           <NavItem icon={<Settings size={20} />} label="Settings" active={activePage === "settings"} href="/dashboard/settings" onClick={onClose} />
         </nav>
         
-        <div className="mt-auto pt-6 border-t border-slate-100 dark:border-slate-800/60">
-          <Link href="/auth" onClick={onClose}>
-            <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900/60 cursor-pointer transition-all">
-              <img className="w-10 h-10 rounded-full border border-slate-200/40 dark:border-slate-800" src="https://i.pravatar.cc/100?u=organizer" alt="User" />
-              <div>
-                <p className="font-bold text-sm text-slate-900 dark:text-white">Aadrish Pirzado</p>
-                <p className="text-xs text-slate-500 dark:text-slate-450 font-medium">Sign Out</p>
+        {/* Dynamic Logged In User Profile Box */}
+        <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800/60">
+          <div className="flex items-center justify-between p-2 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3 overflow-hidden">
+              {user.image ? (
+                <img className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 object-cover shrink-0" src={user.image} alt={user.name} />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-brand-blue text-white font-black text-sm flex items-center justify-center shrink-0 shadow-sm">
+                  {initials}
+                </div>
+              )}
+              <div className="truncate min-w-0">
+                <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{user.name}</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{user.email || "Organizer"}</p>
               </div>
             </div>
-          </Link>
+
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              title="Sign Out"
+              className="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-all shrink-0 ml-1"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
       </aside>
     </>

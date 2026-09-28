@@ -1,0 +1,18 @@
+[
+  {
+    "id": "act_1790623720508_3bah",
+    "user": "MUHAMMAD MAAZ",
+    "action": "checked in at",
+    "event": "Design Leadership Workshop",
+    "time": "Just now",
+    "timestamp": 1790623720508
+  },
+  {
+    "id": "act_1790622538660_xcpb",
+    "user": "MUHAMMAD MAAZ",
+    "action": "registered for",
+    "event": "Design Leadership Workshop",
+    "time": "Just now",
+    "timestamp": 1790622538660
+  }
+]

@@ -105,7 +105,7 @@ function TextRotator() {
           animate={{ y: "0%", opacity: 1 }}
           exit={{ y: "-80%", opacity: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className={`absolute left-0 right-0 bg-gradient-to-r ${word.color} bg-clip-text text-transparent italic`}
+          className={`absolute left-0 right-0 bg-linear-to-r ${word.color} bg-clip-text text-transparent italic`}
         >
           {word.text}
         </motion.span>
@@ -121,10 +121,27 @@ export default function Home() {
   const [activeStep, setActiveStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [confetti, setConfetti] = useState([]);
+  const [sessionUser, setSessionUser] = useState(null);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/me");
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          setSessionUser(data.user);
+        }
+      } catch (err) {
+        // Not logged in
+      }
+    }
+    checkAuth();
+  }, []);
 
   // Hero Mouse Tilt State
   const heroRef = useRef(null);
   const [heroTilt, setHeroTilt] = useState({ x: 0, y: 0 });
+
 
   // How It Works Workspace Mouse Tilt State
   const workspaceRef = useRef(null);
@@ -245,7 +262,7 @@ export default function Home() {
               <a 
                 key={item.href} 
                 href={item.href} 
-                className="relative py-2 capitalize transition-colors hover:text-brand-blue after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-[2px] after:w-full after:bg-brand-blue after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-left"
+                className="relative py-2 capitalize transition-colors hover:text-brand-blue after:content-[''] after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:bg-brand-blue after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-left"
               >
                 {item.label}
               </a>
@@ -253,11 +270,25 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden sm:flex items-center gap-2 sm:gap-3">
-              <Link href="/auth"><button className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-brand-blue px-3 sm:px-4 py-2 transition-colors">Sign In</button></Link>
-              <Link href="/portal"><button className="bg-brand-blue hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all hover:shadow-lg hover:shadow-brand-blue/30 hover:-translate-y-0.5">Get Started</button></Link>
+              {sessionUser ? (
+                <Link href={sessionUser.role === "organizer" || sessionUser.role === "admin" ? "/dashboard" : "/events"}>
+                  <button className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold pl-1.5 pr-3.5 py-1.5 rounded-full hover:border-brand-blue transition-colors">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-[10px] flex items-center justify-center">
+                      {(sessionUser.name || "U").slice(0, 2).toUpperCase()}
+                    </div>
+                    <span>{sessionUser.name}</span>
+                  </button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/auth"><button className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-brand-blue px-3 sm:px-4 py-2 transition-colors">Sign In</button></Link>
+                  <Link href="/portal"><button className="bg-brand-blue hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all hover:shadow-lg hover:shadow-brand-blue/30 hover:-translate-y-0.5">Get Started</button></Link>
+                </>
+              )}
             </div>
             
             <ThemeToggle />
+
             
             <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden text-slate-600 dark:text-slate-400 p-1.5 transition-transform active:scale-95" aria-label="Toggle Navigation Menu">{mobileOpen ? <X size={22}/> : <Menu size={22}/>}</button>
           </div>
@@ -303,9 +334,9 @@ export default function Home() {
         ref={heroRef}
         onMouseMove={handleHeroMouseMove}
         onMouseLeave={handleHeroMouseLeave}
-        className="relative pt-32 pb-20 px-6 overflow-hidden bg-gradient-to-b from-slate-100/90 via-white/80 to-slate-100/90 dark:from-slate-950/80 dark:via-slate-900/60 dark:to-slate-950/90 backdrop-blur-xs z-10"
+        className="relative pt-32 pb-20 px-6 overflow-hidden bg-linear-to-b from-slate-100/90 via-white/80 to-slate-100/90 dark:from-slate-950/80 dark:via-slate-900/60 dark:to-slate-950/90 backdrop-blur-xs z-10"
       >
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-brand-blue/10 rounded-full blur-[140px] pointer-events-none"/>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-225 h-125 bg-brand-blue/10 rounded-full blur-[140px] pointer-events-none"/>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           
           {/* Avatar Row & Project Badge with GSAP animation */}
@@ -341,12 +372,12 @@ export default function Home() {
 
           <motion.div {...fadeUp(0.3)} className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 px-4 sm:px-0">
             <Link href="/portal" className="w-full sm:w-auto flex justify-center">
-              <button className="w-full max-w-[280px] sm:max-w-none flex items-center justify-center gap-2 bg-brand-blue hover:bg-blue-700 text-white font-black text-base px-8 py-4 rounded-2xl shadow-[0_8px_30px_rgba(37,99,235,0.4)] transition-all hover:-translate-y-0.5 group">
+              <button className="w-full max-w-70 sm:max-w-none flex items-center justify-center gap-2 bg-brand-blue hover:bg-blue-700 text-white font-black text-base px-8 py-4 rounded-2xl shadow-[0_8px_30px_rgba(37,99,235,0.4)] transition-all hover:-translate-y-0.5 group">
                 Create Your First Event <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
               </button>
             </Link>
             <a href="#pass3d" className="w-full sm:w-auto flex justify-center">
-              <button className="w-full max-w-[280px] sm:max-w-none text-slate-700 dark:text-slate-300 hover:text-brand-blue font-bold text-base px-8 py-4 rounded-2xl border border-slate-300 dark:border-slate-800 hover:border-brand-blue/40 bg-white/60 dark:bg-slate-900/60 hover:bg-brand-blue/10 transition-all flex items-center justify-center gap-2 backdrop-blur-md">
+              <button className="w-full max-w-70 sm:max-w-none text-slate-700 dark:text-slate-300 hover:text-brand-blue font-bold text-base px-8 py-4 rounded-2xl border border-slate-300 dark:border-slate-800 hover:border-brand-blue/40 bg-white/60 dark:bg-slate-900/60 hover:bg-brand-blue/10 transition-all flex items-center justify-center gap-2 backdrop-blur-md">
                 <Box size={18} className="text-brand-blue animate-pulse"/> Launch 3D Experience
               </button>
             </a>
@@ -369,7 +400,7 @@ export default function Home() {
               <div className="flex-1 mx-4 bg-white dark:bg-slate-950 rounded-lg px-3 py-1 text-xs text-slate-500 font-medium border border-slate-200 dark:border-slate-800/50 shadow-inner">app.eventify.com/dashboard</div>
             </div>
 
-            <div className="bg-white dark:bg-slate-950 p-4 sm:p-6 min-h-[320px]">
+            <div className="bg-white dark:bg-slate-950 p-4 sm:p-6 min-h-80">
               
               {/* Layered Stat Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mb-6">
@@ -396,7 +427,7 @@ export default function Home() {
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-300 mb-3">Registration Trend</p>
                   <div className="flex items-end gap-1 sm:gap-2 h-24">
                     {[40,60,45,80,65,90,75,100,85,95,70,88].map((h,i)=>(
-                      <div key={i} className="flex-1 bg-gradient-to-t from-brand-blue/30 to-brand-blue rounded-t-sm hover:from-brand-blue hover:to-blue-500 transition-colors shadow-sm" style={{height:`${h}%`}}/>
+                      <div key={i} className="flex-1 bg-linear-to-t from-brand-blue/30 to-brand-blue rounded-t-sm hover:from-brand-blue hover:to-blue-500 transition-colors shadow-sm" style={{height:`${h}%`}}/>
                     ))}
                   </div>
                 </ThreeDCard>
@@ -434,7 +465,7 @@ export default function Home() {
             </motion.span>
             <motion.h2 {...fadeUp(0.1)} className="text-3xl sm:text-4xl md:text-5xl font-black mt-5 mb-4 tracking-tight leading-tight text-white">
               Interactive 3D Event Pass<br/>
-              <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-emerald-400 bg-clip-text text-transparent">&amp; Stage Orbit Engine</span>
+              <span className="bg-linear-to-r from-cyan-400 via-blue-400 to-emerald-400 bg-clip-text text-transparent">&amp; Stage Orbit Engine</span>
             </motion.h2>
             <motion.p {...fadeUp(0.2)} className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
               Experience your event tickets in full 3D space. Drag to spin the pass in 360°, inspect holographic security seals, and view real-time stage orbit lighting.
@@ -553,9 +584,9 @@ export default function Home() {
                       {step.title}
                     </h3>
                     {isActive && (
-                      <div className="absolute bottom-0 left-0 w-full h-[3px] bg-slate-200 dark:bg-slate-800">
+                      <div className="absolute bottom-0 left-0 w-full h-0.75 bg-slate-200 dark:bg-slate-800">
                         <div 
-                          className="h-full bg-gradient-to-r from-brand-blue to-violet-500 transition-all duration-75 ease-linear" 
+                          className="h-full bg-linear-to-r from-brand-blue to-violet-500 transition-all duration-75 ease-linear" 
                           style={{ width: `${progress}%` }}
                         />
                       </div>
@@ -592,7 +623,7 @@ export default function Home() {
                   <div className="flex-1 mx-4 bg-white dark:bg-slate-950 rounded-lg px-3 py-1 text-xs text-slate-500 font-medium border border-slate-200 dark:border-slate-800/50 shadow-inner">app.eventify.com/workspace</div>
                 </div>
 
-                <div className="p-4 sm:p-8 min-h-[320px] flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+                <div className="p-4 sm:p-8 min-h-80 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeStep}
@@ -694,7 +725,7 @@ export default function Home() {
                           </div>
                           <div className="h-16 flex items-end gap-1.5 px-2 pb-1 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
                             {[30, 45, 60, 50, 75, 90, 80, 100].map((val, i) => (
-                              <div key={i} className="flex-1 bg-gradient-to-t from-brand-blue/40 to-brand-blue rounded-t-sm" style={{ height: `${val}%` }} />
+                              <div key={i} className="flex-1 bg-linear-to-t from-brand-blue/40 to-brand-blue rounded-t-sm" style={{ height: `${val}%` }} />
                             ))}
                           </div>
                         </div>
@@ -776,7 +807,7 @@ export default function Home() {
       {/* CTA WITH PARALLAX FLOATING DECORATIONS */}
       <section ref={ctaRef} className="py-20 bg-slate-950 overflow-hidden relative z-10">
         <motion.div {...fadeUp()} className="w-full relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-brand-blue via-blue-600 to-brand-green opacity-90"/>
+          <div className="absolute inset-0 bg-linear-to-br from-brand-blue via-blue-600 to-brand-green opacity-90"/>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_60%)]"/>
           
           {/* Floating Parallax Brand Accent Orbs & UI Fragments */}
@@ -805,7 +836,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center overflow-visible px-4 sm:px-0">
               <div className="relative inline-block overflow-visible group w-full sm:w-auto">
                 <div 
-                  className="absolute -inset-1 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 via-blue-500 via-purple-500 to-red-500 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-500 pointer-events-none animate-gradient-x"
+                  className="absolute -inset-1 bg-linear-to-r from-pink-500 via-purple-500 to-cyan-500 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-500 pointer-events-none animate-gradient-x"
                 />
                 <Link href="/portal" className="relative z-10 block w-full">
                   <button 
@@ -888,7 +919,7 @@ export default function Home() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="text-slate-900 dark:text-white font-bold text-base mb-1">{item.title}</h4>
-                        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed break-words">{item.val}</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed wrap-break-word">{item.val}</p>
                       </div>
                     </div>
                   </motion.a>

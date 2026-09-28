@@ -751,7 +751,7 @@ export default function Eventify3DScene() {
           {/* Progress Bar */}
           <div className="w-full bg-slate-800 h-2 rounded-full mt-3 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-100 rounded-full"
+              className="bg-linear-to-r from-emerald-500 to-teal-400 h-full transition-all duration-100 rounded-full"
               style={{ width: `${scanProgress}%` }}
             />
           </div>
@@ -809,7 +809,7 @@ export default function Eventify3DScene() {
           <button
             onClick={handleTestScan}
             disabled={scanState === "scanning"}
-            className="bg-gradient-to-r from-brand-blue to-blue-600 hover:from-blue-600 hover:to-brand-blue text-white text-xs font-black px-5 py-3 rounded-xl shadow-lg shadow-blue-500/25 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 disabled:opacity-50"
+            className="bg-linear-to-r from-brand-blue to-blue-600 hover:from-blue-600 hover:to-brand-blue text-white text-xs font-black px-5 py-3 rounded-xl shadow-lg shadow-blue-500/25 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 disabled:opacity-50"
           >
             {scanState === "scanning" ? (
               <>
