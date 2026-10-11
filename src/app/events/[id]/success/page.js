@@ -77,6 +77,7 @@ function SuccessContent({ params }) {
           const data = await res.json();
           if (data.success && data.session) {
             const meta = data.session.metadata || {};
+            if (meta.ticketCode) resolvedCode = meta.ticketCode;
             if (meta.attendeeName) resolvedName = meta.attendeeName;
             if (meta.attendeeEmail) resolvedEmail = meta.attendeeEmail;
             if (meta.attendeePhone) resolvedPhone = meta.attendeePhone;

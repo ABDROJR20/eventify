@@ -1,42 +1,74 @@
 import { NextResponse } from "next/server";
 import { getAllRegistrations, getAllEvents, updateRegistration } from "@/lib/db";
+import { getDatabase } from "@/lib/mongodb";
 import { MOCK_EVENTS } from "@/lib/data";
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const code = (searchParams.get("code") || searchParams.get("ticket") || "").trim().toUpperCase();
+    const rawCode = (searchParams.get("code") || searchParams.get("ticket") || "").trim();
 
-    if (!code) {
+    if (!rawCode) {
       return NextResponse.json(
         { success: false, message: "Ticket Code is required." },
         { status: 400 }
       );
     }
 
-    const registrations = await getAllRegistrations();
-    const cleanCode = code.replace(/[^A-Z0-9-]/gi, "");
+    const upperCode = rawCode.toUpperCase();
+    const cleanCode = upperCode.replace(/[^A-Z0-9-]/gi, "");
+    const rawNoPrefix = cleanCode.replace(/^EVT-?/i, "");
 
-    let reg = registrations.find(
-      (r) =>
-        (r.ticketCode && r.ticketCode.toUpperCase() === cleanCode) ||
-        (r.id && r.id.toUpperCase() === cleanCode)
-    );
+    // 1. Direct search in MongoDB if available
+    let reg = null;
+    try {
+      const db = await getDatabase();
+      if (db) {
+        reg = await db.collection("registrations").findOne({
+          $or: [
+            { ticketCode: cleanCode },
+            { ticketCode: { $regex: new RegExp(`^${cleanCode}$`, "i") } },
+            { ticketCode: { $regex: new RegExp(rawNoPrefix, "i") } },
+            { id: cleanCode },
+            { id: { $regex: new RegExp(`^#?${cleanCode}$`, "i") } },
+            { id: `#ORD-${rawNoPrefix}` },
+            { customerEmail: rawCode.toLowerCase() },
+          ],
+        });
+        if (reg && reg._id) {
+          const { _id, ...cleanReg } = reg;
+          reg = cleanReg;
+        }
+      }
+    } catch (dbErr) {
+      console.warn("MongoDB direct lookup in verify-ticket error:", dbErr.message);
+    }
 
-    // If not found in registrations, check with loose match or mock fallback
+    // 2. Fallback to cached/file registrations
     if (!reg) {
-      reg = registrations.find(
-        (r) =>
-          r.ticketCode &&
-          r.ticketCode.toUpperCase().includes(cleanCode.replace("EVT-", ""))
-      );
+      const registrations = await getAllRegistrations();
+      reg = registrations.find((r) => {
+        const rTicket = (r.ticketCode || "").toUpperCase();
+        const rId = (r.id || "").toUpperCase();
+        const rEmail = (r.customerEmail || "").toLowerCase();
+
+        return (
+          rTicket === cleanCode ||
+          rTicket === `EVT-${cleanCode}` ||
+          rTicket.replace("EVT-", "") === rawNoPrefix ||
+          rId === cleanCode ||
+          rId === `#${cleanCode}` ||
+          rId === `#ORD-${rawNoPrefix}` ||
+          rEmail === rawCode.toLowerCase()
+        );
+      });
     }
 
     if (!reg) {
       return NextResponse.json({
         success: false,
         valid: false,
-        message: "Invalid ticket code. No matching registration found.",
+        message: `Invalid ticket code (${rawCode}). No matching verified registration found.`,
       });
     }
 
@@ -47,11 +79,11 @@ export async function GET(request) {
     );
     if (!event) {
       event = MOCK_EVENTS.find((e) => String(e.id) === String(reg.eventId)) || {
-        id: reg.eventId,
+        id: reg.eventId || "evt_1",
         title: reg.eventTitle || "Global Tech Summit 2026",
-        date: "July 24, 2026",
-        time: "09:00 AM",
-        location: "Pearl Continental, Lahore",
+        date: "Upcoming",
+        time: "10:00 AM",
+        location: "Karachi Expo Center, PK",
         category: "Technology",
       };
     }
@@ -62,10 +94,10 @@ export async function GET(request) {
       registration: {
         id: reg.id,
         ticketCode: reg.ticketCode,
-        customerName: reg.customerName,
+        customerName: reg.customerName || "Valued Attendee",
         customerEmail: reg.customerEmail,
-        customerPhone: reg.customerPhone,
-        ticketType: reg.ticketType || "Standard",
+        customerPhone: reg.customerPhone || "",
+        ticketType: reg.ticketType || "Standard Access",
         amount: reg.amount,
         amountDisplay: reg.amountDisplay || `PKR ${reg.amount}`,
         status: reg.status || "Completed",
@@ -102,14 +134,42 @@ export async function POST(request) {
       return NextResponse.json({ success: false, message: "Ticket code is required." }, { status: 400 });
     }
 
-    const registrations = await getAllRegistrations();
     const cleanCode = ticketCode.trim().toUpperCase();
+    const rawNoPrefix = cleanCode.replace(/^EVT-?/i, "");
 
-    const reg = registrations.find(
-      (r) =>
-        (r.ticketCode && r.ticketCode.toUpperCase() === cleanCode) ||
-        (r.id && r.id.toUpperCase() === cleanCode)
-    );
+    let reg = null;
+
+    // Direct MongoDB lookup
+    try {
+      const db = await getDatabase();
+      if (db) {
+        reg = await db.collection("registrations").findOne({
+          $or: [
+            { ticketCode: cleanCode },
+            { ticketCode: { $regex: new RegExp(`^${cleanCode}$`, "i") } },
+            { ticketCode: { $regex: new RegExp(rawNoPrefix, "i") } },
+            { id: cleanCode },
+            { id: `#ORD-${rawNoPrefix}` },
+          ],
+        });
+        if (reg && reg._id) {
+          const { _id, ...cleanReg } = reg;
+          reg = cleanReg;
+        }
+      }
+    } catch (dbErr) {
+      console.warn("MongoDB post verify error:", dbErr.message);
+    }
+
+    if (!reg) {
+      const registrations = await getAllRegistrations();
+      reg = registrations.find(
+        (r) =>
+          (r.ticketCode && r.ticketCode.toUpperCase() === cleanCode) ||
+          (r.ticketCode && r.ticketCode.toUpperCase().includes(rawNoPrefix)) ||
+          (r.id && r.id.toUpperCase() === cleanCode)
+      );
+    }
 
     if (!reg) {
       return NextResponse.json({ success: false, message: "Ticket not found." }, { status: 404 });
@@ -120,7 +180,7 @@ export async function POST(request) {
         return NextResponse.json({
           success: false,
           alreadyCheckedIn: true,
-          message: `Already checked in at ${new Date(reg.checkedInAt).toLocaleTimeString()}`,
+          message: `Already checked in at ${new Date(reg.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
           registration: reg,
         });
       }

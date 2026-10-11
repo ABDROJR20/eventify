@@ -38,29 +38,34 @@ export async function POST(request) {
       };
     }
 
-    // Ensure registration ID
+    // Ensure registration ID and Ticket Code
     let regId = registrationId;
+    let ticketCode = `EVT-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
     if (!regId) {
       const regIdNum = Math.floor(1000 + Math.random() * 9000);
       regId = `#ORD-${regIdNum}`;
-      const ticketCode = `EVT-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    }
 
-      await createRegistration({
-        id: regId,
-        eventId: currentEvent.id || eventId,
-        eventTitle: currentEvent.title,
-        customerName: name,
-        customerEmail: email,
-        customerPhone: phone || "",
-        ticketType: ticketType,
-        ticketCount: 1,
-        amount: Number(amount),
-        amountDisplay: `PKR ${Number(amount).toFixed(2)}`,
-        status: "Pending Payment",
-        ticketCode: ticketCode,
-        checkedIn: false,
-        paymentMethod: "Stripe"
-      });
+    const createdReg = await createRegistration({
+      id: regId,
+      eventId: currentEvent.id || eventId,
+      eventTitle: currentEvent.title,
+      customerName: name,
+      customerEmail: email,
+      customerPhone: phone || "",
+      ticketType: ticketType,
+      ticketCount: 1,
+      amount: Number(amount),
+      amountDisplay: `PKR ${Number(amount).toFixed(2)}`,
+      status: "Pending Payment",
+      ticketCode: ticketCode,
+      checkedIn: false,
+      paymentMethod: "Stripe"
+    });
+
+    if (createdReg && createdReg.ticketCode) {
+      ticketCode = createdReg.ticketCode;
     }
 
     // Determine base URL (handles localhost and production Vercel)
@@ -104,6 +109,7 @@ export async function POST(request) {
       customer_email: email,
       metadata: {
         registrationId: regId,
+        ticketCode: ticketCode,
         eventId: String(eventId),
         eventTitle: currentEvent.title,
         attendeeName: name,
@@ -113,7 +119,7 @@ export async function POST(request) {
         originalAmountPKR: String(numAmount),
         amountUSD: String(convertedUsd),
       },
-      success_url: `${origin}/events/${eventId}/success?session_id={CHECKOUT_SESSION_ID}&regId=${encodeURIComponent(regId)}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone || '')}&tier=${encodeURIComponent(ticketType)}&amount=${encodeURIComponent(`$${convertedUsd.toFixed(2)} (PKR ${numAmount})`)}&gateway=Stripe`,
+      success_url: `${origin}/events/${eventId}/success?session_id={CHECKOUT_SESSION_ID}&regId=${encodeURIComponent(regId)}&code=${encodeURIComponent(ticketCode)}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone || '')}&tier=${encodeURIComponent(ticketType)}&amount=${encodeURIComponent(`$${convertedUsd.toFixed(2)} (PKR ${numAmount})`)}&gateway=Stripe`,
       cancel_url: `${origin}/events/${eventId}/checkout?regId=${encodeURIComponent(regId)}&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone || '')}&tier=${encodeURIComponent(ticketType)}&cancelled=true`,
     });
 
@@ -121,6 +127,8 @@ export async function POST(request) {
       success: true,
       sessionId: session.id,
       url: session.url,
+      ticketCode: ticketCode,
+      registrationId: regId,
     });
   } catch (error) {
     console.error("Stripe checkout session creation error:", error);

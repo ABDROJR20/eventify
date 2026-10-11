@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAllEvents, getAllRegistrations, updateRegistration } from "@/lib/db";
+import { getAllEvents, getAllRegistrations, updateRegistration, createRegistration } from "@/lib/db";
 import { sendTicketEmail } from "@/lib/email";
 import { MOCK_EVENTS } from "@/lib/data";
 
@@ -40,21 +40,47 @@ export async function POST(request, { params }) {
       };
     }
 
-    // Mark registration as confirmed in DB if exists
-    if (regId) {
-      try {
-        const registrations = await getAllRegistrations();
-        const reg = registrations.find((r) => String(r.id) === String(regId));
-        if (reg) {
-          await updateRegistration(reg.id, {
-            status: "Completed",
-            ticketSent: true,
-            ticketSentAt: new Date().toISOString(),
-          });
-        }
-      } catch (dbErr) {
-        console.warn("Could not update reg in db:", dbErr.message);
+    const finalCode = ticketCode || `EVT-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    const finalRegId = regId || `#ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Ensure registration exists and is saved in DB with ticketCode
+    try {
+      const registrations = await getAllRegistrations();
+      const existing = registrations.find(
+        (r) =>
+          (regId && String(r.id) === String(regId)) ||
+          (r.ticketCode && r.ticketCode === finalCode)
+      );
+
+      if (existing) {
+        await updateRegistration(existing.id, {
+          ticketCode: finalCode,
+          status: "Completed",
+          ticketSent: true,
+          ticketSentAt: new Date().toISOString(),
+          customerName: name || existing.customerName,
+          customerEmail: email || existing.customerEmail,
+        });
+      } else {
+        await createRegistration({
+          id: finalRegId,
+          eventId: currentEvent.id || eventId,
+          eventTitle: currentEvent.title,
+          customerName: name || "Attendee",
+          customerEmail: email.toLowerCase().trim(),
+          customerPhone: "",
+          ticketType: ticketType,
+          ticketCount: 1,
+          amount: typeof amount === "number" ? amount : (parseFloat(String(amount).replace(/[^0-9.]/g, "")) || 49),
+          amountDisplay: typeof amount === "string" ? amount : `PKR ${amount || 49}`,
+          status: "Completed",
+          ticketCode: finalCode,
+          checkedIn: false,
+          paymentMethod: "Online",
+        });
       }
+    } catch (dbErr) {
+      console.warn("Could not upsert registration in send-ticket:", dbErr.message);
     }
 
     // Send email with dynamic QR code via Nodemailer
@@ -66,13 +92,14 @@ export async function POST(request, { params }) {
       eventTime: currentEvent.time || "10:00 AM",
       eventLocation: currentEvent.location || "Venue",
       ticketType: ticketType,
-      ticketCode: ticketCode || `EVT-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
+      ticketCode: finalCode,
       amount: amount || "Paid",
     });
 
     return NextResponse.json({
       success: true,
       message: `Ticket successfully delivered to ${email}`,
+      ticketCode: finalCode,
       emailResult,
     });
   } catch (error) {

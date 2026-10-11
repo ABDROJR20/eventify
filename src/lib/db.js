@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
+import { getDatabase } from "./mongodb";
 
 // Determine data directory (Vercel Serverless read-only environment vs Local dev)
 const isServerless =
@@ -146,9 +147,7 @@ const SEED_EVENTS = [
 ];
 
 const SEED_ATTENDEES = [];
-
 const SEED_REGISTRATIONS = [];
-
 const SEED_ACTIVITIES = [];
 
 const SEED_SETTINGS = {
@@ -265,8 +264,22 @@ async function ensureFiles() {
   }
 }
 
-// User helper methods
+// ==========================================
+// USER CRUD HELPERS
+// ==========================================
 export async function getAllUsers() {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const users = await db.collection("users").find({}).toArray();
+      if (users && users.length > 0) {
+        return users.map(({ _id, ...u }) => u);
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getAllUsers fallback:", e.message);
+  }
+
   await ensureFiles();
   try {
     const data = await fs.readFile(USERS_FILE, "utf8");
@@ -280,12 +293,39 @@ export async function getAllUsers() {
 
 export async function findUserByEmail(email) {
   if (!email) return null;
+  const normalized = email.toLowerCase().trim();
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const user = await db.collection("users").findOne({ email: normalized });
+      if (user) {
+        const { _id, ...cleanUser } = user;
+        return cleanUser;
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB findUserByEmail fallback:", e.message);
+  }
+
   const users = await getAllUsers();
-  return users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
+  return users.find((u) => u.email.toLowerCase() === normalized) || null;
 }
 
 export async function findUserById(id) {
   if (!id) return null;
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const user = await db.collection("users").findOne({ id });
+      if (user) {
+        const { _id, ...cleanUser } = user;
+        return cleanUser;
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB findUserById fallback:", e.message);
+  }
+
   const users = await getAllUsers();
   return users.find((u) => u.id === id) || null;
 }
@@ -298,69 +338,91 @@ export async function createUser({
   provider = "credentials",
   image = null,
 }) {
-  await ensureFiles();
-  const users = await getAllUsers();
-
-  const existing = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+  const normalizedEmail = email.toLowerCase().trim();
+  const existing = await findUserByEmail(normalizedEmail);
   if (existing) {
     throw new Error("User with this email already exists");
   }
 
   const newUser = {
     id: "usr_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9),
-    name: name || email.split("@")[0],
-    email: email.toLowerCase().trim(),
+    name: name || normalizedEmail.split("@")[0],
+    email: normalizedEmail,
     password: password || null,
-    role: role || "attendee", // 'attendee' | 'organizer' | 'admin'
-    provider: provider || "credentials", // 'credentials' | 'google'
+    role: role || "attendee",
+    provider: provider || "credentials",
     image: image || null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("users").insertOne({ ...newUser });
+    }
+  } catch (err) {
+    console.warn("MongoDB createUser write error:", err.message);
+  }
+
+  await ensureFiles();
+  const users = await getAllUsers();
   users.push(newUser);
   globalThis.__eventify_users = users;
 
   try {
     await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
   } catch (err) {
-    console.warn("Could not persist to file, stored in memory cache:", err.message);
+    console.warn("Could not persist user to file:", err.message);
   }
 
   return newUser;
 }
 
 export async function updateUser(email, updates) {
-  await ensureFiles();
-  const users = await getAllUsers();
-  const index = users.findIndex((u) => u.email.toLowerCase() === email.toLowerCase());
-
-  if (index === -1) {
-    throw new Error("User not found");
-  }
-
-  users[index] = {
-    ...users[index],
+  const normalizedEmail = email.toLowerCase().trim();
+  const updatedData = {
     ...updates,
     updatedAt: new Date().toISOString(),
   };
 
-  globalThis.__eventify_users = users;
-
   try {
-    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
-  } catch (err) {
-    console.warn("Could not persist to file, stored in memory cache:", err.message);
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("users").updateOne({ email: normalizedEmail }, { $set: updatedData });
+    }
+  } catch (e) {
+    console.warn("MongoDB updateUser error:", e.message);
   }
 
-  return users[index];
+  await ensureFiles();
+  const users = await getAllUsers();
+  const index = users.findIndex((u) => u.email.toLowerCase() === normalizedEmail);
+
+  if (index !== -1) {
+    users[index] = {
+      ...users[index],
+      ...updatedData,
+    };
+    globalThis.__eventify_users = users;
+    try {
+      await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
+    } catch (err) {
+      console.warn("Could not persist user update to file:", err.message);
+    }
+    return users[index];
+  }
+
+  return { email: normalizedEmail, ...updatedData };
 }
 
 export async function updateUserPassword(email, newHashedPassword) {
   return updateUser(email, { password: newHashedPassword });
 }
 
-// OTP Store Methods
+// ==========================================
+// OTP STORE METHODS
+// ==========================================
 export async function getAllOtps() {
   await ensureFiles();
   try {
@@ -374,32 +436,63 @@ export async function getAllOtps() {
 }
 
 export async function saveOtp(email, otp, expiresInMinutes = 10) {
-  await ensureFiles();
-  const otps = await getAllOtps();
   const normalizedEmail = email.toLowerCase().trim();
-
   const expiresAt = Date.now() + expiresInMinutes * 60 * 1000;
-  otps[normalizedEmail] = {
+  const otpRecord = {
     otp: String(otp).trim(),
     expiresAt,
     createdAt: Date.now(),
   };
 
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("otps").updateOne(
+        { email: normalizedEmail },
+        { $set: { ...otpRecord, email: normalizedEmail } },
+        { upsert: true }
+      );
+    }
+  } catch (e) {
+    console.warn("MongoDB saveOtp error:", e.message);
+  }
+
+  await ensureFiles();
+  const otps = await getAllOtps();
+  otps[normalizedEmail] = otpRecord;
   globalThis.__eventify_otps = otps;
 
   try {
     await fs.writeFile(OTPS_FILE, JSON.stringify(otps, null, 2), "utf8");
   } catch (err) {
-    console.warn("Could not persist OTP to file, stored in memory cache:", err.message);
+    console.warn("Could not persist OTP to file:", err.message);
   }
 
-  return otps[normalizedEmail];
+  return otpRecord;
 }
 
 export async function getOtp(email) {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const record = await db.collection("otps").findOne({ email: normalizedEmail });
+      if (record) {
+        if (Date.now() > record.expiresAt) {
+          await deleteOtp(email);
+          return null;
+        }
+        return record;
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getOtp error:", e.message);
+  }
+
   await ensureFiles();
   const otps = await getAllOtps();
-  const record = otps[email.toLowerCase().trim()];
+  const record = otps[normalizedEmail];
   if (!record) return null;
 
   if (Date.now() > record.expiresAt) {
@@ -411,9 +504,18 @@ export async function getOtp(email) {
 }
 
 export async function deleteOtp(email) {
+  const normalizedEmail = email.toLowerCase().trim();
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("otps").deleteOne({ email: normalizedEmail });
+    }
+  } catch (e) {
+    console.warn("MongoDB deleteOtp error:", e.message);
+  }
+
   await ensureFiles();
   const otps = await getAllOtps();
-  const normalizedEmail = email.toLowerCase().trim();
   if (otps[normalizedEmail]) {
     delete otps[normalizedEmail];
     globalThis.__eventify_otps = otps;
@@ -429,6 +531,18 @@ export async function deleteOtp(email) {
 // EVENTS CRUD HELPERS
 // ==========================================
 export async function getAllEvents() {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const events = await db.collection("events").find({}).toArray();
+      if (events && events.length > 0) {
+        return events.map(({ _id, ...e }) => e);
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getAllEvents fallback:", e.message);
+  }
+
   await ensureFiles();
   try {
     const data = await fs.readFile(EVENTS_FILE, "utf8");
@@ -447,9 +561,6 @@ export async function getEventById(id) {
 }
 
 export async function createEvent(eventData) {
-  await ensureFiles();
-  const events = await getAllEvents();
-
   const newEvent = {
     id: "evt_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
     title: eventData.title || "Untitled Event",
@@ -462,7 +573,7 @@ export async function createEvent(eventData) {
     image: eventData.image || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80&fit=crop",
     attendeesCount: 0,
     capacity: Number(eventData.capacity) || 100,
-    status: eventData.status || "Draft", // Published | Draft | Past
+    status: eventData.status || "Draft",
     featured: Boolean(eventData.featured),
     ticketsSold: 0,
     revenue: 0,
@@ -473,6 +584,17 @@ export async function createEvent(eventData) {
     updatedAt: new Date().toISOString(),
   };
 
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("events").insertOne({ ...newEvent });
+    }
+  } catch (e) {
+    console.warn("MongoDB createEvent error:", e.message);
+  }
+
+  await ensureFiles();
+  const events = await getAllEvents();
   events.unshift(newEvent);
   globalThis.__eventify_events = events;
 
@@ -482,7 +604,6 @@ export async function createEvent(eventData) {
     console.warn("Could not persist event to file:", err.message);
   }
 
-  // Log activity
   await logActivity({
     user: "Organizer",
     action: "created event",
@@ -493,47 +614,61 @@ export async function createEvent(eventData) {
 }
 
 export async function updateEvent(id, updates) {
+  const updatedPrice = updates.price !== undefined ? Number(updates.price) : undefined;
+  const updatedPriceDisplay = updatedPrice !== undefined ? (updatedPrice > 0 ? `PKR ${updatedPrice.toFixed(2)}` : "Free") : undefined;
+
+  const eventUpdates = {
+    ...updates,
+    ...(updatedPrice !== undefined && { price: updatedPrice }),
+    ...(updatedPriceDisplay !== undefined && { priceDisplay: updates.priceDisplay || updatedPriceDisplay }),
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("events").updateOne({ id: String(id) }, { $set: eventUpdates });
+    }
+  } catch (e) {
+    console.warn("MongoDB updateEvent error:", e.message);
+  }
+
   await ensureFiles();
   const events = await getAllEvents();
   const index = events.findIndex((e) => String(e.id) === String(id));
 
-  if (index === -1) {
-    throw new Error("Event not found");
+  if (index !== -1) {
+    events[index] = {
+      ...events[index],
+      ...eventUpdates,
+    };
+    globalThis.__eventify_events = events;
+    try {
+      await fs.writeFile(EVENTS_FILE, JSON.stringify(events, null, 2), "utf8");
+    } catch (err) {
+      console.warn("Could not persist event updates:", err.message);
+    }
+    return events[index];
   }
 
-  const updatedPrice = updates.price !== undefined ? Number(updates.price) : events[index].price;
-  const updatedPriceDisplay = updatedPrice > 0 ? `PKR ${updatedPrice.toFixed(2)}` : "Free";
-
-  events[index] = {
-    ...events[index],
-    ...updates,
-    price: updatedPrice,
-    priceDisplay: updates.priceDisplay || updatedPriceDisplay,
-    updatedAt: new Date().toISOString(),
-  };
-
-  globalThis.__eventify_events = events;
-
-  try {
-    await fs.writeFile(EVENTS_FILE, JSON.stringify(events, null, 2), "utf8");
-  } catch (err) {
-    console.warn("Could not persist event updates:", err.message);
-  }
-
-  return events[index];
+  return { id, ...eventUpdates };
 }
 
 export async function deleteEvent(id) {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("events").deleteOne({ id: String(id) });
+    }
+  } catch (e) {
+    console.warn("MongoDB deleteEvent error:", e.message);
+  }
+
   await ensureFiles();
   const events = await getAllEvents();
   const filtered = events.filter((e) => String(e.id) !== String(id));
 
-  if (filtered.length === events.length) {
-    throw new Error("Event not found");
-  }
-
   globalThis.__eventify_events = filtered;
-
   try {
     await fs.writeFile(EVENTS_FILE, JSON.stringify(filtered, null, 2), "utf8");
   } catch (err) {
@@ -547,6 +682,18 @@ export async function deleteEvent(id) {
 // ATTENDEES CRUD HELPERS
 // ==========================================
 export async function getAllAttendees() {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const attendees = await db.collection("attendees").find({}).toArray();
+      if (attendees && attendees.length > 0) {
+        return attendees.map(({ _id, ...a }) => a);
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getAllAttendees fallback:", e.message);
+  }
+
   await ensureFiles();
   try {
     const data = await fs.readFile(ATTENDEES_FILE, "utf8");
@@ -565,9 +712,6 @@ export async function getAttendeeById(id) {
 }
 
 export async function createAttendee(data) {
-  await ensureFiles();
-  const attendees = await getAllAttendees();
-
   const newAttendee = {
     id: "att_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
     name: data.name || "Anonymous Attendee",
@@ -579,6 +723,17 @@ export async function createAttendee(data) {
     createdAt: new Date().toISOString(),
   };
 
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("attendees").insertOne({ ...newAttendee });
+    }
+  } catch (e) {
+    console.warn("MongoDB createAttendee error:", e.message);
+  }
+
+  await ensureFiles();
+  const attendees = await getAllAttendees();
   attendees.unshift(newAttendee);
   globalThis.__eventify_attendees = attendees;
 
@@ -592,42 +747,60 @@ export async function createAttendee(data) {
 }
 
 export async function updateAttendee(id, updates) {
-  await ensureFiles();
-  const attendees = await getAllAttendees();
-  const index = attendees.findIndex((a) => String(a.id) === String(id));
-
-  if (index === -1) {
-    throw new Error("Attendee not found");
-  }
-
-  attendees[index] = {
-    ...attendees[index],
+  const attendeeUpdates = {
     ...updates,
     updatedAt: new Date().toISOString(),
   };
 
-  globalThis.__eventify_attendees = attendees;
-
   try {
-    await fs.writeFile(ATTENDEES_FILE, JSON.stringify(attendees, null, 2), "utf8");
-  } catch (err) {
-    console.warn("Could not update attendee:", err.message);
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("attendees").updateOne({ id: String(id) }, { $set: attendeeUpdates });
+    }
+  } catch (e) {
+    console.warn("MongoDB updateAttendee error:", e.message);
   }
 
-  return attendees[index];
+  await ensureFiles();
+  const attendees = await getAllAttendees();
+  const index = attendees.findIndex((a) => String(a.id) === String(id));
+
+  if (index !== -1) {
+    attendees[index] = {
+      ...attendees[index],
+      ...attendeeUpdates,
+    };
+    globalThis.__eventify_attendees = attendees;
+    try {
+      await fs.writeFile(ATTENDEES_FILE, JSON.stringify(attendees, null, 2), "utf8");
+    } catch (err) {
+      console.warn("Could not update attendee in file:", err.message);
+    }
+    return attendees[index];
+  }
+
+  return { id, ...attendeeUpdates };
 }
 
 export async function deleteAttendee(id) {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("attendees").deleteOne({ id: String(id) });
+    }
+  } catch (e) {
+    console.warn("MongoDB deleteAttendee error:", e.message);
+  }
+
   await ensureFiles();
   const attendees = await getAllAttendees();
   const filtered = attendees.filter((a) => String(a.id) !== String(id));
-
   globalThis.__eventify_attendees = filtered;
 
   try {
     await fs.writeFile(ATTENDEES_FILE, JSON.stringify(filtered, null, 2), "utf8");
   } catch (err) {
-    console.warn("Could not delete attendee:", err.message);
+    console.warn("Could not delete attendee from file:", err.message);
   }
 
   return { success: true, id };
@@ -637,6 +810,18 @@ export async function deleteAttendee(id) {
 // REGISTRATIONS & ORDERS HELPERS
 // ==========================================
 export async function getAllRegistrations() {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const registrations = await db.collection("registrations").find({}).sort({ createdAt: -1 }).toArray();
+      if (registrations && registrations.length > 0) {
+        return registrations.map(({ _id, ...r }) => r);
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getAllRegistrations fallback:", e.message);
+  }
+
   await ensureFiles();
   try {
     const data = await fs.readFile(REGISTRATIONS_FILE, "utf8");
@@ -649,10 +834,9 @@ export async function getAllRegistrations() {
 }
 
 export async function createRegistration(data) {
-  await ensureFiles();
-  const registrations = await getAllRegistrations();
+  const idNum = Math.floor(1000 + Math.random() * 9000);
+  const ticketCode = data.ticketCode || `EVT-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-  const idNum = Math.floor(100 + Math.random() * 900);
   const newReg = {
     id: data.id || `#ORD-${idNum}`,
     eventId: data.eventId || "evt_1",
@@ -660,18 +844,42 @@ export async function createRegistration(data) {
     customerName: data.customerName || "Attendee",
     customerEmail: (data.customerEmail || "").toLowerCase().trim(),
     customerPhone: data.customerPhone || "",
-    ticketType: data.ticketType || "Standard",
+    ticketType: data.ticketType || "Standard Access",
     ticketCount: Number(data.ticketCount) || 1,
     amount: Number(data.amount) || 0,
-    amountDisplay: `$${(Number(data.amount) || 0).toFixed(2)}`,
+    amountDisplay: data.amountDisplay || `PKR ${(Number(data.amount) || 0).toFixed(2)}`,
     status: data.status || "Completed",
     checkedIn: Boolean(data.checkedIn),
     checkedInAt: data.checkedIn ? new Date().toISOString() : null,
-    ticketCode: data.ticketCode || `EVT-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
-    createdAt: new Date().toISOString(),
+    ticketCode: ticketCode,
+    paymentMethod: data.paymentMethod || "Online",
+    createdAt: data.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 
-  registrations.unshift(newReg);
+  // Upsert in MongoDB
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("registrations").updateOne(
+        { id: newReg.id },
+        { $set: newReg },
+        { upsert: true }
+      );
+    }
+  } catch (e) {
+    console.warn("MongoDB createRegistration error:", e.message);
+  }
+
+  await ensureFiles();
+  const registrations = await getAllRegistrations();
+  // Avoid duplicate if existing
+  const existingIndex = registrations.findIndex((r) => r.id === newReg.id || r.ticketCode === newReg.ticketCode);
+  if (existingIndex !== -1) {
+    registrations[existingIndex] = newReg;
+  } else {
+    registrations.unshift(newReg);
+  }
   globalThis.__eventify_registrations = registrations;
 
   try {
@@ -680,7 +888,6 @@ export async function createRegistration(data) {
     console.warn("Could not persist registration:", err.message);
   }
 
-  // Log activity
   await logActivity({
     user: newReg.customerName,
     action: "registered for",
@@ -691,41 +898,55 @@ export async function createRegistration(data) {
 }
 
 export async function updateRegistration(id, updates) {
-  await ensureFiles();
-  const registrations = await getAllRegistrations();
-  const index = registrations.findIndex((r) => String(r.id) === String(id));
-
-  if (index === -1) {
-    throw new Error("Registration not found");
-  }
-
-  registrations[index] = {
-    ...registrations[index],
+  const regUpdates = {
     ...updates,
     updatedAt: new Date().toISOString(),
   };
 
-  globalThis.__eventify_registrations = registrations;
-
   try {
-    await fs.writeFile(REGISTRATIONS_FILE, JSON.stringify(registrations, null, 2), "utf8");
-  } catch (err) {
-    console.warn("Could not update registration:", err.message);
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("registrations").updateOne(
+        { $or: [{ id: String(id) }, { ticketCode: String(id) }] },
+        { $set: regUpdates }
+      );
+    }
+  } catch (e) {
+    console.warn("MongoDB updateRegistration error:", e.message);
   }
 
-  return registrations[index];
+  await ensureFiles();
+  const registrations = await getAllRegistrations();
+  const index = registrations.findIndex((r) => String(r.id) === String(id) || String(r.ticketCode) === String(id));
+
+  if (index !== -1) {
+    registrations[index] = {
+      ...registrations[index],
+      ...regUpdates,
+    };
+    globalThis.__eventify_registrations = registrations;
+    try {
+      await fs.writeFile(REGISTRATIONS_FILE, JSON.stringify(registrations, null, 2), "utf8");
+    } catch (err) {
+      console.warn("Could not update registration in file:", err.message);
+    }
+    return registrations[index];
+  }
+
+  return { id, ...regUpdates };
 }
 
 export async function checkInTicket(query) {
-  await ensureFiles();
-  const registrations = await getAllRegistrations();
-  const trimmed = String(query).trim().toLowerCase();
+  const trimmed = String(query).trim().toUpperCase();
+  const cleanCode = trimmed.replace(/[^A-Z0-9-]/gi, "");
 
-  const reg = registrations.find(
+  let registrations = await getAllRegistrations();
+  let reg = registrations.find(
     (r) =>
-      r.ticketCode.toLowerCase() === trimmed ||
-      r.id.toLowerCase() === trimmed ||
-      r.customerEmail.toLowerCase() === trimmed
+      (r.ticketCode && r.ticketCode.toUpperCase() === cleanCode) ||
+      (r.id && r.id.toUpperCase() === cleanCode) ||
+      (r.customerEmail && r.customerEmail.toUpperCase() === trimmed) ||
+      (r.ticketCode && r.ticketCode.toUpperCase().includes(cleanCode.replace("EVT-", "")))
   );
 
   if (!reg) {
@@ -737,35 +958,41 @@ export async function checkInTicket(query) {
       success: false,
       alreadyCheckedIn: true,
       registration: reg,
-      message: `Already checked in at ${new Date(reg.checkedInAt).toLocaleTimeString()}`,
+      message: `Already checked in at ${new Date(reg.checkedInAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
     };
   }
 
-  reg.checkedIn = true;
-  reg.checkedInAt = new Date().toISOString();
-  reg.status = "Checked In";
-  globalThis.__eventify_registrations = registrations;
+  const updated = await updateRegistration(reg.id, {
+    checkedIn: true,
+    checkedInAt: new Date().toISOString(),
+    status: "Checked In",
+  });
 
-  try {
-    await fs.writeFile(REGISTRATIONS_FILE, JSON.stringify(registrations, null, 2), "utf8");
-  } catch (err) {
-    console.warn("Could not persist checkin:", err.message);
-  }
-
-  // Log activity
   await logActivity({
     user: reg.customerName,
     action: "checked in at",
     event: reg.eventTitle,
   });
 
-  return { success: true, registration: reg, message: "Check-in successful!" };
+  return { success: true, registration: updated, message: "Check-in successful!" };
 }
 
 // ==========================================
 // ACTIVITIES HELPERS
 // ==========================================
 export async function getAllActivities() {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const activities = await db.collection("activities").find({}).sort({ timestamp: -1 }).limit(50).toArray();
+      if (activities && activities.length > 0) {
+        return activities.map(({ _id, ...a }) => a);
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getAllActivities fallback:", e.message);
+  }
+
   await ensureFiles();
   try {
     const data = await fs.readFile(ACTIVITIES_FILE, "utf8");
@@ -778,9 +1005,6 @@ export async function getAllActivities() {
 }
 
 export async function logActivity({ user, action, event }) {
-  await ensureFiles();
-  const activities = await getAllActivities();
-
   const newAct = {
     id: "act_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
     user: user || "Attendee",
@@ -790,8 +1014,18 @@ export async function logActivity({ user, action, event }) {
     timestamp: Date.now(),
   };
 
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("activities").insertOne({ ...newAct });
+    }
+  } catch (e) {
+    console.warn("MongoDB logActivity error:", e.message);
+  }
+
+  await ensureFiles();
+  const activities = await getAllActivities();
   activities.unshift(newAct);
-  // Keep last 50 activities
   const trimmed = activities.slice(0, 50);
   globalThis.__eventify_activities = trimmed;
 
@@ -808,6 +1042,19 @@ export async function logActivity({ user, action, event }) {
 // ORGANIZER SETTINGS HELPERS
 // ==========================================
 export async function getOrganizerSettings() {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const settings = await db.collection("settings").findOne({ type: "organizer" });
+      if (settings) {
+        const { _id, type, ...cleanSettings } = settings;
+        return cleanSettings;
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getOrganizerSettings fallback:", e.message);
+  }
+
   await ensureFiles();
   try {
     const data = await fs.readFile(SETTINGS_FILE, "utf8");
@@ -820,7 +1067,6 @@ export async function getOrganizerSettings() {
 }
 
 export async function updateOrganizerSettings(updates) {
-  await ensureFiles();
   const current = await getOrganizerSettings();
   const merged = {
     ...current,
@@ -836,6 +1082,20 @@ export async function updateOrganizerSettings(updates) {
     updatedAt: new Date().toISOString(),
   };
 
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("settings").updateOne(
+        { type: "organizer" },
+        { $set: { ...merged, type: "organizer" } },
+        { upsert: true }
+      );
+    }
+  } catch (e) {
+    console.warn("MongoDB updateOrganizerSettings error:", e.message);
+  }
+
+  await ensureFiles();
   globalThis.__eventify_settings = merged;
 
   try {
@@ -846,4 +1106,3 @@ export async function updateOrganizerSettings(updates) {
 
   return merged;
 }
-

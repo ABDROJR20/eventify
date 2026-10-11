@@ -38,9 +38,9 @@ function VerifyTicketContent() {
   const [ticketDetails, setTicketDetails] = useState(null);
   const [checkInSuccess, setCheckInSuccess] = useState(false);
 
-  const handleVerify = async (e) => {
-    if (e) e.preventDefault();
-    if (!inputCode.trim()) {
+  const performVerification = async (codeToVerify) => {
+    const code = (codeToVerify !== undefined ? codeToVerify : inputCode).trim();
+    if (!code) {
       setErrorMsg("Please enter the Ticket Code shown on your pass.");
       return;
     }
@@ -49,7 +49,7 @@ function VerifyTicketContent() {
     setIsVerifying(true);
 
     try {
-      const res = await fetch(`/api/verify-ticket?code=${encodeURIComponent(inputCode.trim())}`);
+      const res = await fetch(`/api/verify-ticket?code=${encodeURIComponent(code)}`);
       const data = await res.json();
 
       if (!res.ok || !data.success || !data.valid) {
@@ -66,10 +66,16 @@ function VerifyTicketContent() {
     }
   };
 
-  // If user lands with pre-filled code in URL, auto-fill it
+  const handleVerify = (e) => {
+    if (e) e.preventDefault();
+    performVerification(inputCode);
+  };
+
+  // If user lands with pre-filled code in URL from QR scan, auto-fill and auto-verify it
   useEffect(() => {
     if (urlTicketCode) {
       setInputCode(urlTicketCode);
+      performVerification(urlTicketCode);
     }
   }, [urlTicketCode]);
 
