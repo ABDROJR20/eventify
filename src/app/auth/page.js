@@ -104,9 +104,10 @@ function AuthContent() {
         throw new Error(data.message || "Authentication failed. Please check your credentials.");
       }
 
+      const targetUrl = searchParams.get("redirect") || searchParams.get("next") || theme.linkPath;
       setSuccess(isLogin ? "Login successful! Redirecting..." : "Account created! Redirecting...");
       setTimeout(() => {
-        router.push(theme.linkPath);
+        router.push(targetUrl);
       }, 700);
     } catch (err) {
       setError(err.message || "An unexpected error occurred.");
@@ -177,9 +178,10 @@ function AuthContent() {
               throw new Error(data.message || "Google authentication failed on server.");
             }
 
+            const targetUrl = searchParams.get("redirect") || searchParams.get("next") || theme.linkPath;
             setSuccess("Successfully authenticated with Google! Redirecting...");
             setTimeout(() => {
-              router.push(theme.linkPath);
+              router.push(targetUrl);
             }, 700);
           } catch (err) {
             setError(err.message || "Google authentication failed.");

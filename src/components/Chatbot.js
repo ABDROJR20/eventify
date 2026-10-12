@@ -1,41 +1,230 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Sparkles, Bot, User, ArrowRight, CornerDownLeft, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { 
+  MessageSquare, 
+  X, 
+  Send, 
+  Sparkles, 
+  Bot, 
+  User, 
+  ArrowRight, 
+  RefreshCw, 
+  AlertCircle
+} from "lucide-react";
 
 const INITIAL_MESSAGES = [
   {
     id: 1,
     sender: "bot",
-    text: "Hi! I'm your Eventify AI. I can help you find events, manage your registrations, or answer any questions. How can I help you today?",
-    time: "Just now",
-  },
-  {
-    id: 2,
-    sender: "user",
-    text: "Find me some upcoming tech events in Karachi.",
-    time: "Just now",
-  },
-  {
-    id: 3,
-    sender: "bot",
-    isRecommendation: true,
-    title: "Global Tech Summit 2026",
-    desc: "Based on your interest in AI and Software Engineering.",
+    text: "Hi! I'm your Eventify AI Assistant. I can help you find upcoming events, check ticket prices, view your bookings, or answer questions in English & Roman Urdu. How can I help you today?",
     time: "Just now",
   },
 ];
 
 const QUICK_PROMPTS = [
   "Find upcoming tech events",
+  "Karachi mein events kaun se hain?",
   "How does QR check-in work?",
-  "How to create an event?",
+  "My booked tickets",
 ];
 
+// Render styled inline text (bold, italic, clean text without raw asterisks)
+function renderInlineText(text, keyPrefix = "txt") {
+  if (!text) return null;
+
+  // 1. Process bold: **text**
+  const boldParts = text.split(/(\*\*[^*]+?\*\*)/g);
+
+  return boldParts.map((bPart, bIdx) => {
+    if (bPart.startsWith("**") && bPart.endsWith("**") && bPart.length > 4) {
+      const boldContent = bPart.slice(2, -2).trim();
+      return (
+        <strong key={`${keyPrefix}-b-${bIdx}`} className="font-semibold text-slate-900 dark:text-white">
+          {boldContent}
+        </strong>
+      );
+    }
+
+    // 2. Process italic: *text* or _text_
+    const italicParts = bPart.split(/(\*[^*]+?\*|_[^_]+?_)/g);
+    return italicParts.map((iPart, iIdx) => {
+      if (
+        (iPart.startsWith("*") && iPart.endsWith("*") && iPart.length > 2) ||
+        (iPart.startsWith("_") && iPart.endsWith("_") && iPart.length > 2)
+      ) {
+        const italicContent = iPart.slice(1, -1).trim();
+        return (
+          <em key={`${keyPrefix}-i-${bIdx}-${iIdx}`} className="italic text-slate-800 dark:text-slate-200">
+            {italicContent}
+          </em>
+        );
+      }
+
+      // 3. Remove any remaining orphan asterisks so no '*' is ever displayed as raw text
+      const cleaned = iPart.replace(/\*+/g, "");
+      return <span key={`${keyPrefix}-s-${bIdx}-${iIdx}`}>{cleaned}</span>;
+    });
+  });
+}
+
+// Extract markdown links or raw event routes from a text line
+function extractLinksAndContent(line) {
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+  const buttons = [];
+  let remainingText = line;
+
+  let match;
+  while ((match = linkRegex.exec(line)) !== null) {
+    buttons.push({
+      label: match[1].trim(),
+      url: match[2].trim(),
+    });
+  }
+
+  // Remove markdown links from remaining text
+  remainingText = remainingText.replace(linkRegex, "").trim();
+
+  // If no markdown links found, detect raw internal paths (e.g. /events/123 or /verify-ticket)
+  if (buttons.length === 0) {
+    const rawPathRegex = /(?:^|\s)(\/(?:events(?:\/[a-zA-Z0-9_\-]+)?|verify-ticket|profile|tickets))(?:$|\s|[.,!?])/;
+    const pathMatch = remainingText.match(rawPathRegex);
+    if (pathMatch) {
+      const detectedPath = pathMatch[1];
+      let btnLabel = "View Event Details";
+      if (detectedPath.includes("verify-ticket")) btnLabel = "Verify QR Ticket";
+      else if (detectedPath.includes("profile") || detectedPath.includes("tickets")) btnLabel = "View My Tickets";
+      else if (detectedPath === "/events") btnLabel = "Browse All Events";
+      else if (detectedPath.startsWith("/events/")) btnLabel = "View 3D Event Pass";
+
+      buttons.push({
+        label: btnLabel,
+        url: detectedPath,
+      });
+      remainingText = remainingText.replace(detectedPath, "").trim();
+    }
+  }
+
+  return {
+    cleanText: remainingText,
+    buttons,
+  };
+}
+
+// Action button component matching user's requested pill design ("View 3D Event Pass ->")
+function ActionButton({ label, url, onNavigate }) {
+  const isExternal = url.startsWith("http://") || url.startsWith("https://");
+
+  return (
+    <button
+      type="button"
+      onClick={() => onNavigate(url)}
+      className="w-full my-1.5 py-2.5 px-4 bg-blue-50/90 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-semibold rounded-full border border-blue-200/70 dark:border-blue-800/60 shadow-2xs hover:shadow-xs flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer group text-xs sm:text-sm tracking-wide"
+      title={isExternal ? `Open ${label}` : `Navigate to ${label}`}
+    >
+      <span className="truncate">{label}</span>
+      <ArrowRight size={15} className="shrink-0 transition-transform group-hover:translate-x-1 text-blue-600 dark:text-blue-400" />
+    </button>
+  );
+}
+
+// Helper to format messages professionally without raw asterisks and turn links into pill buttons
+function FormattedMessage({ text, onNavigate }) {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+
+  return (
+    <div className="space-y-1.5 leading-relaxed break-words text-xs sm:text-sm">
+      {lines.map((rawLine, idx) => {
+        const line = rawLine.trim();
+        if (!line) {
+          return <div key={idx} className="h-1.5" />;
+        }
+
+        // 1. Headings: ### Title or ## Title
+        if (/^#{1,6}\s+/.test(line)) {
+          const headingText = line.replace(/^#{1,6}\s+/, "");
+          return (
+            <h4 key={idx} className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm mt-2.5 mb-1 tracking-tight">
+              {renderInlineText(headingText, `h-${idx}`)}
+            </h4>
+          );
+        }
+
+        // 2. Unordered Bullet points: * Item or - Item or • Item
+        const isBullet = /^[\*\-•]\s+/.test(line);
+        if (isBullet) {
+          const contentAfterBullet = line.replace(/^[\*\-•]\s+/, "");
+          const { cleanText, buttons } = extractLinksAndContent(contentAfterBullet);
+
+          return (
+            <div key={idx} className="my-1.5">
+              <div className="flex items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 mt-1.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  {cleanText && renderInlineText(cleanText, `b-${idx}`)}
+                </div>
+              </div>
+              {buttons.map((btn, bIdx) => (
+                <div key={bIdx} className="pl-3.5">
+                  <ActionButton label={btn.label} url={btn.url} onNavigate={onNavigate} />
+                </div>
+              ))}
+            </div>
+          );
+        }
+
+        // 3. Numbered lists: 1. Item or 2) Item
+        const numMatch = line.match(/^(\d+)[\.\)]\s+(.*)/);
+        if (numMatch) {
+          const num = numMatch[1];
+          const contentAfterNum = numMatch[2];
+          const { cleanText, buttons } = extractLinksAndContent(contentAfterNum);
+
+          return (
+            <div key={idx} className="my-1.5">
+              <div className="flex items-start gap-2">
+                <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded-md shrink-0 mt-0.5 border border-blue-200/50 dark:border-blue-800/40">
+                  {num}
+                </span>
+                <div className="flex-1 min-w-0">
+                  {cleanText && renderInlineText(cleanText, `num-${idx}`)}
+                </div>
+              </div>
+              {buttons.map((btn, bIdx) => (
+                <div key={bIdx} className="pl-4">
+                  <ActionButton label={btn.label} url={btn.url} onNavigate={onNavigate} />
+                </div>
+              ))}
+            </div>
+          );
+        }
+
+        // 4. Regular Paragraph / Standalone Link
+        const { cleanText, buttons } = extractLinksAndContent(line);
+
+        return (
+          <div key={idx} className="my-1">
+            {cleanText && <p>{renderInlineText(cleanText, `p-${idx}`)}</p>}
+            {buttons.map((btn, bIdx) => (
+              <ActionButton key={bIdx} label={btn.label} url={btn.url} onNavigate={onNavigate} />
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function Chatbot() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [lastQuery, setLastQuery] = useState("");
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -46,33 +235,83 @@ export default function Chatbot() {
     if (isOpen) {
       scrollToBottom();
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, isTyping]);
 
-  const handleSend = (textToSend) => {
+  // Smart Link Navigation with Authentication Gatekeeper
+  const handleSmartNavigate = async (destinationUrl) => {
+    if (!destinationUrl) return;
+
+    // External URLs (e.g. https://example.com)
+    if (destinationUrl.startsWith("http://") || destinationUrl.startsWith("https://")) {
+      window.open(destinationUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    setIsOpen(false); // Close chatbot modal to reveal destination
+
+    // If destination is already an auth page, navigate directly
+    if (destinationUrl.startsWith("/auth")) {
+      router.push(destinationUrl);
+      return;
+    }
+
+    try {
+      // Verify whether user is currently signed in
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+
+      if (data.authenticated && data.user) {
+        // User is ALREADY signed in -> Go directly to destination!
+        router.push(destinationUrl);
+      } else {
+        // User is NOT signed in -> Redirect to login page first, preserving destination!
+        const authRedirectUrl = `/auth?role=attendee&redirect=${encodeURIComponent(destinationUrl)}`;
+        router.push(authRedirectUrl);
+      }
+    } catch (err) {
+      // Fallback on error: safely route to auth with redirect param
+      const authRedirectUrl = `/auth?role=attendee&redirect=${encodeURIComponent(destinationUrl)}`;
+      router.push(authRedirectUrl);
+    }
+  };
+
+  const handleSend = async (textToSend) => {
     const query = typeof textToSend === "string" ? textToSend : inputVal;
-    if (!query.trim()) return;
+    if (!query || !query.trim() || isTyping) return;
+
+    const trimmedQuery = query.trim();
+    setLastQuery(trimmedQuery);
+    setErrorMessage("");
 
     const userMsg = {
       id: Date.now(),
       sender: "user",
-      text: query.trim(),
+      text: trimmedQuery,
       time: "Just now",
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const newHistory = [...messages, userMsg];
+    setMessages(newHistory);
     setInputVal("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      let replyText = "I'm here to help with your events! You can create, manage, or explore tickets directly from the portal.";
-      const lower = query.toLowerCase();
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: trimmedQuery,
+          history: newHistory.slice(-8).map((m) => ({
+            sender: m.sender,
+            text: m.text,
+          })),
+        }),
+      });
 
-      if (lower.includes("tech") || lower.includes("karachi") || lower.includes("summit")) {
-        replyText = "The Global Tech Summit 2026 is happening at Karachi Convention Center with 50+ keynote speakers and interactive AI workshops. Check the 3D Pass section for instant passes!";
-      } else if (lower.includes("qr") || lower.includes("check-in") || lower.includes("scan")) {
-        replyText = "Eventify includes instant paperless QR check-in. Attendees show their digital 3D pass at the venue entrance for under 2-second automated verification.";
-      } else if (lower.includes("create") || lower.includes("organize") || lower.includes("start")) {
-        replyText = "To create your first event, click the 'Create Your First Event' button or navigate to the Portal. You can configure registration tiers, tickets, and automated emails in minutes.";
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Failed to get AI response.");
       }
 
       setMessages((prev) => [
@@ -80,12 +319,22 @@ export default function Chatbot() {
         {
           id: Date.now() + 1,
           sender: "bot",
-          text: replyText,
+          text: data.text,
           time: "Just now",
         },
       ]);
+    } catch (err) {
+      console.error("Chat error:", err);
+      setErrorMessage(err.message || "Could not connect to Eventify AI. Please try again.");
+    } finally {
       setIsTyping(false);
-    }, 900);
+    }
+  };
+
+  const handleRetry = () => {
+    if (lastQuery) {
+      handleSend(lastQuery);
+    }
   };
 
   return (
@@ -94,8 +343,8 @@ export default function Chatbot() {
       <div
         className={`fixed z-[100] transition-all duration-300 ease-out origin-bottom-right
           bottom-20 right-3 left-3 sm:left-auto sm:right-6 sm:bottom-24
-          w-auto sm:w-[400px] max-w-[calc(100vw-1.5rem)] sm:max-w-[400px]
-          h-[min(560px,calc(100dvh-6.5rem))] flex flex-col
+          w-auto sm:w-[410px] max-w-[calc(100vw-1.5rem)] sm:max-w-[410px]
+          h-[min(580px,calc(100dvh-6.5rem))] flex flex-col
           bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl
           rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)]
           border border-slate-200/80 dark:border-slate-800/80 overflow-hidden
@@ -116,18 +365,28 @@ export default function Chatbot() {
                 <h3 className="font-bold text-sm sm:text-base leading-tight">Eventify AI Assistant</h3>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </div>
-              <p className="text-[11px] text-slate-400">Ask me anything about events</p>
+              <p className="text-[11px] text-slate-400">English • Roman Urdu • Live Events</p>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsOpen(false)}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all active:scale-95"
-            title="Close Assistant"
-            aria-label="Close Chat"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setMessages(INITIAL_MESSAGES)}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              title="Reset Conversation"
+              aria-label="Reset Conversation"
+            >
+              <RefreshCw size={13} />
+            </button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              title="Close Assistant"
+              aria-label="Close Chat"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Chat Body (Scrollable Messages Area) */}
@@ -144,38 +403,12 @@ export default function Chatbot() {
               );
             }
 
-            if (m.isRecommendation) {
-              return (
-                <div
-                  key={m.id}
-                  className="bg-white dark:bg-slate-900 p-4 rounded-2xl rounded-tl-xs shadow-sm max-w-[88%] border border-emerald-500/30 dark:border-emerald-500/20 bg-linear-to-br from-emerald-50/50 to-white dark:from-emerald-950/30 dark:to-slate-900"
-                >
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                    <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                      AI Recommendation
-                    </p>
-                  </div>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">{m.title}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 italic">"{m.desc}"</p>
-                  <a
-                    href="#pass3d"
-                    onClick={() => setIsOpen(false)}
-                    className="w-full py-2 px-3 bg-brand-blue/10 hover:bg-brand-blue text-brand-blue hover:text-white dark:bg-brand-blue/20 dark:hover:bg-brand-blue dark:text-blue-300 dark:hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 group"
-                  >
-                    View 3D Event Pass
-                    <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
-                  </a>
-                </div>
-              );
-            }
-
             return (
               <div
                 key={m.id}
                 className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-3.5 sm:p-4 rounded-2xl rounded-tl-xs shadow-sm max-w-[88%] border border-slate-200/80 dark:border-slate-800/80 text-xs sm:text-sm leading-relaxed"
               >
-                <p>{m.text}</p>
+                <FormattedMessage text={m.text} onNavigate={handleSmartNavigate} />
               </div>
             );
           })}
@@ -185,6 +418,22 @@ export default function Chatbot() {
               <span className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-bounce" style={{ animationDelay: "0ms" }} />
               <span className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-bounce" style={{ animationDelay: "150ms" }} />
               <span className="w-1.5 h-1.5 rounded-full bg-brand-blue animate-bounce" style={{ animationDelay: "300ms" }} />
+              <span className="text-[10px] text-slate-400 font-bold ml-1.5">Consulting Eventify database...</span>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-2xl text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <AlertCircle size={14} className="shrink-0 text-rose-500" />
+                <span className="truncate">{errorMessage}</span>
+              </div>
+              <button
+                onClick={handleRetry}
+                className="text-[11px] font-bold underline shrink-0 hover:text-rose-900 dark:hover:text-rose-100 cursor-pointer"
+              >
+                Retry
+              </button>
             </div>
           )}
 
@@ -197,7 +446,8 @@ export default function Chatbot() {
             <button
               key={q}
               onClick={() => handleSend(q)}
-              className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-2.5 py-1 whitespace-nowrap transition-colors shrink-0 shadow-2xs hover:border-brand-blue/40"
+              disabled={isTyping}
+              className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-brand-blue dark:hover:text-blue-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-2.5 py-1 whitespace-nowrap transition-colors shrink-0 shadow-2xs hover:border-brand-blue/40 disabled:opacity-50 cursor-pointer"
             >
               {q}
             </button>
@@ -217,13 +467,15 @@ export default function Chatbot() {
               type="text"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 bg-transparent border-none outline-none text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 font-medium py-1.5"
+              disabled={isTyping}
+              maxLength={1000}
+              placeholder={isTyping ? "Eventify AI is thinking..." : "Ask in English or Roman Urdu..."}
+              className="flex-1 bg-transparent border-none outline-none text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-500 dark:placeholder:text-slate-400 font-medium py-1.5 disabled:opacity-50"
             />
             <button
               type="submit"
-              disabled={!inputVal.trim()}
-              className="w-9 h-9 sm:w-10 sm:h-10 bg-brand-blue hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-brand-blue text-white rounded-xl flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-md shadow-blue-500/25"
+              disabled={!inputVal.trim() || isTyping}
+              className="w-9 h-9 sm:w-10 sm:h-10 bg-brand-blue hover:bg-blue-700 disabled:opacity-40 disabled:hover:bg-brand-blue text-white rounded-xl flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-md shadow-blue-500/25 cursor-pointer"
               aria-label="Send message"
             >
               <Send size={16} />
@@ -235,7 +487,7 @@ export default function Chatbot() {
       {/* Floating Action Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-[0_10px_30px_rgba(37,99,235,0.4)] flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-[0_10px_30px_rgba(37,99,235,0.4)] flex items-center justify-center transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer ${
           isOpen ? "bg-slate-900 dark:bg-slate-800 rotate-90 text-white" : "bg-brand-blue text-white"
         }`}
         aria-label="Toggle Eventify AI Chat"
