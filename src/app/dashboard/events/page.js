@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function MyEvents() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -321,6 +322,7 @@ export default function MyEvents() {
             >
               <Plus className="mr-1.5 h-5 w-5" /> New Event
             </Button>
+            <NotificationBell role="organizer" />
             <ThemeToggle />
           </div>
         </header>

@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Sidebar from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Attendees() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -144,6 +145,7 @@ export default function Attendees() {
             >
               <MessageSquare size={16} className="mr-2" /> Broadcast Message
             </Button>
+            <NotificationBell role="organizer" />
             <ThemeToggle />
           </div>
         </header>

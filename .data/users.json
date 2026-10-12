@@ -1,57 +1,35 @@
 [
   {
-    "id": "usr_1789818771517_q5kaaa0",
-    "name": "Test Attendee",
-    "email": "test_1789818769022@example.com",
-    "password": "$2b$10$hg0qP/eJ2aB.Jq5BrAWf3u00DDybxTNpPao3hCmRqYCpcRtN.HdtO",
-    "role": "attendee",
-    "provider": "credentials",
-    "image": null,
-    "createdAt": "2026-09-19T11:52:51.518Z",
-    "updatedAt": "2026-09-19T11:53:30.859Z"
-  },
-  {
-    "id": "usr_1789818797408_t5hiqij",
-    "name": "Google User",
-    "email": "googleuser@gmail.com",
-    "password": null,
-    "role": "organizer",
-    "provider": "google",
-    "image": null,
-    "createdAt": "2026-09-19T11:53:17.408Z",
-    "updatedAt": "2026-09-19T11:53:17.408Z"
-  },
-  {
-    "id": "usr_1789818799698_q5tpfi7",
+    "id": "usr_1791805684903_54zvwrw",
     "name": "System Administrator",
-    "email": "admin@eventify.com",
-    "password": "$2b$10$RRZJw6iuW7OvMFlSPY5lsuW5tJUGGMVk8VTE0Pbcu0LzuVc9zzGiG",
+    "email": "admin@gmail.com",
+    "password": "$2b$10$NUppi7.jxBltORjSlZjhCOYBHP2hrDiNXm7pJsxVgQlvEnZn39UsS",
     "role": "admin",
     "provider": "credentials",
     "image": null,
-    "createdAt": "2026-09-19T11:53:19.698Z",
-    "updatedAt": "2026-09-19T11:53:19.698Z"
+    "createdAt": "2026-10-12T11:48:04.903Z",
+    "updatedAt": "2026-10-12T11:48:04.903Z"
   },
   {
-    "id": "usr_1789820362394_jrijit9",
-    "name": "Hafiz Abdullah",
+    "id": "usr_1791805734421_mwzyzz5",
+    "name": "Abdullah Munawar",
     "email": "hafizabdullah.munawar786@gmail.com",
     "password": null,
     "role": "organizer",
     "provider": "google",
     "image": "https://lh3.googleusercontent.com/a/ACg8ocLnfV6v9AmZNQBy73ZJTcLI7mT5A_hfeb_2CHDLjKFRjgkLiSzw=s96-c",
-    "createdAt": "2026-09-19T12:19:22.394Z",
-    "updatedAt": "2026-09-28T19:27:22.530Z"
+    "createdAt": "2026-10-12T11:48:54.421Z",
+    "updatedAt": "2026-10-12T11:48:54.421Z"
   },
   {
-    "id": "usr_1790618428420_e2qo1ap",
-    "name": "MUHAMMAD MAAZ",
-    "email": "muhammadmaaz.racer707@gmail.com",
+    "id": "usr_1791805734421_mwzyzz5",
+    "name": "Abdullah Munawar",
+    "email": "hafizabdullah.munawar786@gmail.com",
     "password": null,
-    "role": "attendee",
+    "role": "organizer",
     "provider": "google",
-    "image": "https://lh3.googleusercontent.com/a/ACg8ocIC5VdJigveVsZwB8yd4_Qa_6GIXkOI5sAo0O7IysjZNDZJtEk=s96-c",
-    "createdAt": "2026-09-28T18:00:28.420Z",
-    "updatedAt": "2026-10-11T23:48:14.866Z"
+    "image": "https://lh3.googleusercontent.com/a/ACg8ocLnfV6v9AmZNQBy73ZJTcLI7mT5A_hfeb_2CHDLjKFRjgkLiSzw=s96-c",
+    "createdAt": "2026-10-12T11:48:54.421Z",
+    "updatedAt": "2026-10-12T11:48:54.421Z"
   }
 ]

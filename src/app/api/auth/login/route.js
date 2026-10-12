@@ -43,14 +43,28 @@ export async function POST(request) {
       );
     }
 
-    // If user selected role, optionally update or keep existing
-    let activeRole = user.role;
-    if (role && ["attendee", "organizer"].includes(role) && user.role !== "admin") {
-      activeRole = role;
-      if (user.role !== role) {
-        await updateUser(user.email, { role });
-      }
+    // Strict Role Validation: Prevent Attendees from logging in to Organizer portal & vice-versa
+    if (role === "organizer" && user.role === "attendee") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "This account is registered as an Attendee. You cannot log in to the Organizer portal with an Attendee account. Please switch to 'I am an Attendee' to log in.",
+        },
+        { status: 403 }
+      );
     }
+
+    if (role === "attendee" && user.role === "organizer") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "This account is registered as an Organizer. Please switch to 'I am an Organizer' to log in.",
+        },
+        { status: 403 }
+      );
+    }
+
+    const activeRole = user.role;
 
     // Generate JWT & session cookie
     const tokenPayload = {

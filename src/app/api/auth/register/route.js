@@ -33,6 +33,24 @@ export async function POST(request) {
     // Check if user exists
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
+      if (existingUser.role === "attendee" && role === "organizer") {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "This email is already registered as an Attendee account. You cannot create an Organizer account with this email. Please log in as an Attendee.",
+          },
+          { status: 409 }
+        );
+      }
+      if (existingUser.role === "organizer" && role === "attendee") {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "This email is already registered as an Organizer account. Please log in as an Organizer.",
+          },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { success: false, message: "An account with this email already exists" },
         { status: 409 }

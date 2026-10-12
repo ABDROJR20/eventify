@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import Sidebar from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Dashboard() {
   const [activeAction, setActiveAction] = useState("Start QR Check-in");
@@ -229,6 +230,7 @@ export default function Dashboard() {
             <Button onClick={() => setIsCreateModalOpen(true)} size="lg" className="bg-brand-blue hover:bg-brand-blue/90 font-bold rounded-xl h-11 shadow-xl shadow-blue-500/20 px-4 sm:px-6 shrink-0 text-white">
               <Plus className="sm:mr-2 h-5 w-5" /> <span className="hidden sm:inline">Create Event</span>
             </Button>
+            <NotificationBell role="organizer" />
             <ThemeToggle />
           </div>
         </header>

@@ -22,6 +22,7 @@ const REGISTRATIONS_FILE = path.join(DATA_DIR, "registrations.json");
 const ATTENDEES_FILE = path.join(DATA_DIR, "attendees.json");
 const ACTIVITIES_FILE = path.join(DATA_DIR, "activities.json");
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
+const NOTIFICATIONS_FILE = path.join(DATA_DIR, "notifications.json");
 
 // In-Memory Global Fallback Cache for Serverless Lambdas
 if (!globalThis.__eventify_users) globalThis.__eventify_users = null;
@@ -31,6 +32,7 @@ if (!globalThis.__eventify_registrations) globalThis.__eventify_registrations = 
 if (!globalThis.__eventify_attendees) globalThis.__eventify_attendees = null;
 if (!globalThis.__eventify_activities) globalThis.__eventify_activities = null;
 if (!globalThis.__eventify_settings) globalThis.__eventify_settings = null;
+if (!globalThis.__eventify_notifications) globalThis.__eventify_notifications = null;
 
 // Initial Seed Data
 const SEED_EVENTS = [
@@ -151,38 +153,120 @@ const SEED_REGISTRATIONS = [];
 const SEED_ACTIVITIES = [];
 
 const SEED_SETTINGS = {
-  organizerName: "Aadrish Pirzado",
-  companyName: "Eventify Innovations",
-  email: "aadrish@example.com",
-  phone: "+92 300 9876543",
-  bio: "Lead event producer organizing elite tech, design, and developer experiences worldwide.",
-  website: "https://eventify.pk",
-  avatarUrl: "https://i.pravatar.cc/150?u=organizer",
+  profile: {
+    name: "Aadrish Pirzado",
+    companyName: "Eventify Innovations",
+    email: "aadrish@example.com",
+    phone: "+92 300 9876543",
+    bio: "We curate high-end technology and design events across Pakistan.",
+    avatarUrl: "https://i.pravatar.cc/150?u=organizer",
+    twitter: "https://twitter.com/eventifypk",
+    linkedin: "https://linkedin.com/company/eventify",
+  },
   payoutMethods: {
+    stripe: {
+      connected: true,
+      accountId: "acct_1EventifyStripeOrg",
+      email: "aadrish@example.com",
+      currency: "PKR",
+      instantPayouts: true,
+      chargesEnabled: true,
+      payoutsEnabled: true,
+      detailsSubmitted: true,
+    },
     bankAccount: {
       accountTitle: "Aadrish Pirzado",
-      bankName: "Habib Bank Limited (HBL)",
-      accountNumber: "PK36HABB0001234567890123",
-      isDefault: true
+      bankName: "Meezan Bank",
+      accountNumber: "PK36MEZN0001234567898992",
+      isDefault: true,
     },
     jazzCash: {
       accountNumber: "+92 300 9876543",
       accountName: "Aadrish Pirzado",
-      isDefault: false
+      isDefault: false,
     },
     easyPaisa: {
       accountNumber: "+92 300 9876543",
       accountName: "Aadrish Pirzado",
-      isDefault: false
-    }
+      isDefault: false,
+    },
   },
   notifications: {
-    emailOnNewTicket: true,
-    emailOnCheckIn: false,
-    dailySummary: true,
-    smsAlerts: false
-  }
+    ticketSalesAlerts: true,
+    dailyDigest: true,
+    marketingEmails: false,
+    inAppSound: true,
+    emailOnCheckIn: true,
+  },
+  security: {
+    twoFactorEnabled: false,
+    lastPasswordChange: new Date().toISOString(),
+  },
+  updatedAt: new Date().toISOString(),
 };
+
+const SEED_NOTIFICATIONS = [
+  {
+    id: "notif_1",
+    recipientRole: "organizer",
+    title: "New Ticket Booking 🎟️",
+    message: "Muhammad Ali booked a ticket for Global Tech Summit 2026 (PKR 49.00).",
+    type: "ticket",
+    link: "/dashboard/registrations",
+    read: false,
+    createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "notif_2",
+    recipientRole: "organizer",
+    title: "Stripe Payout Scheduled 💰",
+    message: "Stripe payout of PKR 20,825 is scheduled to transfer to your linked Meezan Bank account.",
+    type: "payout",
+    link: "/dashboard/settings",
+    read: false,
+    createdAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "notif_3",
+    recipientRole: "organizer",
+    title: "QR Check-in Verified ✅",
+    message: "Attendee checked in with dynamic QR code at Gate 1 (Karachi Expo Center).",
+    type: "checkin",
+    link: "/dashboard",
+    read: true,
+    createdAt: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: "notif_4",
+    recipientRole: "attendee",
+    title: "Booking Confirmed! 🎟️",
+    message: "Your ticket for Global Tech Summit 2026 is confirmed. Your 3D Event Pass is ready.",
+    type: "ticket",
+    link: "/portal",
+    read: false,
+    createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "notif_5",
+    recipientRole: "attendee",
+    title: "Event Reminder ⏰",
+    message: "Global Tech Summit 2026 is coming up soon. Present your QR code at entrance.",
+    type: "event",
+    link: "/events/evt_1",
+    read: false,
+    createdAt: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: "notif_6",
+    recipientRole: "all",
+    title: "Eventify 3D Pass Experience Live 🚀",
+    message: "Interactive 3D passes with real-time motion and QR verification are now active.",
+    type: "system",
+    link: "/events",
+    read: true,
+    createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+  },
+];
 
 // Ensure directory and files exist with seed data migration
 async function ensureFiles() {
@@ -253,6 +337,14 @@ async function ensureFiles() {
       await fs.writeFile(SETTINGS_FILE, JSON.stringify(SEED_SETTINGS, null, 2), "utf8");
       globalThis.__eventify_settings = SEED_SETTINGS;
     }
+
+    // Check/seed notifications.json
+    try {
+      await fs.access(NOTIFICATIONS_FILE);
+    } catch {
+      await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify(SEED_NOTIFICATIONS, null, 2), "utf8");
+      globalThis.__eventify_notifications = SEED_NOTIFICATIONS;
+    }
   } catch (error) {
     console.warn("Storage warning (falling back to memory):", error.message);
     if (!globalThis.__eventify_users) globalThis.__eventify_users = [];
@@ -261,6 +353,7 @@ async function ensureFiles() {
     if (!globalThis.__eventify_registrations) globalThis.__eventify_registrations = SEED_REGISTRATIONS;
     if (!globalThis.__eventify_activities) globalThis.__eventify_activities = SEED_ACTIVITIES;
     if (!globalThis.__eventify_settings) globalThis.__eventify_settings = SEED_SETTINGS;
+    if (!globalThis.__eventify_notifications) globalThis.__eventify_notifications = SEED_NOTIFICATIONS;
   }
 }
 
@@ -1105,4 +1198,175 @@ export async function updateOrganizerSettings(updates) {
   }
 
   return merged;
+}
+
+// ==========================================
+// NOTIFICATIONS HELPERS
+// ==========================================
+export async function getAllNotifications() {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const list = await db.collection("notifications").find({}).sort({ createdAt: -1 }).toArray();
+      if (list && list.length > 0) {
+        return list.map(({ _id, ...notif }) => notif);
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getAllNotifications fallback:", e.message);
+  }
+
+  await ensureFiles();
+  try {
+    const data = await fs.readFile(NOTIFICATIONS_FILE, "utf8");
+    const list = JSON.parse(data || "[]");
+    globalThis.__eventify_notifications = list;
+    return list;
+  } catch {
+    return globalThis.__eventify_notifications || SEED_NOTIFICATIONS;
+  }
+}
+
+export async function getUserNotifications(userRole = "all", userEmail = "") {
+  const all = await getAllNotifications();
+  return all.filter((n) => {
+    // If targeted directly to this user's email
+    if (userEmail && n.recipientEmail && n.recipientEmail.toLowerCase() === userEmail.toLowerCase()) {
+      return true;
+    }
+    // If broadcast to all users
+    if (n.recipientRole === "all") return true;
+    // If targeted to role (organizer or attendee)
+    if (userRole && n.recipientRole === userRole) return true;
+    return false;
+  });
+}
+
+export async function createNotification({
+  title,
+  message,
+  type = "system",
+  recipientRole = "all",
+  recipientEmail = null,
+  link = null,
+}) {
+  const newNotif = {
+    id: "notif_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+    recipientRole,
+    recipientEmail,
+    title,
+    message,
+    type,
+    link,
+    read: false,
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("notifications").insertOne({ ...newNotif });
+    }
+  } catch (e) {
+    console.warn("MongoDB createNotification error:", e.message);
+  }
+
+  await ensureFiles();
+  const list = await getAllNotifications();
+  list.unshift(newNotif);
+  const trimmed = list.slice(0, 100);
+  globalThis.__eventify_notifications = trimmed;
+
+  try {
+    await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify(trimmed, null, 2), "utf8");
+  } catch (err) {
+    console.warn("Could not save notification:", err.message);
+  }
+
+  return newNotif;
+}
+
+export async function markNotificationAsRead(id) {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("notifications").updateOne({ id }, { $set: { read: true } });
+    }
+  } catch (e) {
+    console.warn("MongoDB markNotificationAsRead error:", e.message);
+  }
+
+  await ensureFiles();
+  const list = await getAllNotifications();
+  const updated = list.map((n) => (n.id === id ? { ...n, read: true } : n));
+  globalThis.__eventify_notifications = updated;
+
+  try {
+    await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify(updated, null, 2), "utf8");
+  } catch (err) {
+    console.warn("Could not update notification:", err.message);
+  }
+
+  return true;
+}
+
+export async function markAllNotificationsAsRead(userRole = "all", userEmail = "") {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const filter = {
+        $or: [
+          { recipientRole: userRole },
+          { recipientRole: "all" },
+          ...(userEmail ? [{ recipientEmail: userEmail }] : []),
+        ],
+      };
+      await db.collection("notifications").updateMany(filter, { $set: { read: true } });
+    }
+  } catch (e) {
+    console.warn("MongoDB markAllNotificationsAsRead error:", e.message);
+  }
+
+  await ensureFiles();
+  const list = await getAllNotifications();
+  const updated = list.map((n) => {
+    const isTarget =
+      n.recipientRole === "all" ||
+      n.recipientRole === userRole ||
+      (userEmail && n.recipientEmail?.toLowerCase() === userEmail.toLowerCase());
+    return isTarget ? { ...n, read: true } : n;
+  });
+  globalThis.__eventify_notifications = updated;
+
+  try {
+    await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify(updated, null, 2), "utf8");
+  } catch (err) {
+    console.warn("Could not update all notifications:", err.message);
+  }
+
+  return true;
+}
+
+export async function deleteNotification(id) {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("notifications").deleteOne({ id });
+    }
+  } catch (e) {
+    console.warn("MongoDB deleteNotification error:", e.message);
+  }
+
+  await ensureFiles();
+  const list = await getAllNotifications();
+  const updated = list.filter((n) => n.id !== id);
+  globalThis.__eventify_notifications = updated;
+
+  try {
+    await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify(updated, null, 2), "utf8");
+  } catch (err) {
+    console.warn("Could not delete notification:", err.message);
+  }
+
+  return true;
 }

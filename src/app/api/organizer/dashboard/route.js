@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
+import { getSessionUser } from "@/lib/auth";
 import { getAllEvents, getAllRegistrations, getAllAttendees, getAllActivities } from "@/lib/db";
 
 export async function GET(request) {
   try {
+    const user = await getSessionUser();
+    if (!user || (user.role !== "organizer" && user.role !== "admin")) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden: Organizer access required." },
+        { status: 403 }
+      );
+    }
     const { searchParams } = new URL(request.url);
     const range = searchParams.get("range") || "7days"; // 7days | 30days | 90days | year | custom
     const startDateParam = searchParams.get("startDate");

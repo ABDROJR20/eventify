@@ -6,7 +6,8 @@ import {
   createRegistration, 
   getAllEvents, 
   updateEvent, 
-  logActivity 
+  logActivity,
+  createNotification 
 } from "@/lib/db";
 import { sendTicketEmail } from "@/lib/email";
 
@@ -116,7 +117,26 @@ export async function POST(request) {
           ticketCode: reg.ticketCode,
           amount: reg.amountDisplay || `PKR ${reg.amount}`,
         });
+
+        // In-App Notification for Attendee
+        await createNotification({
+          title: "Ticket Confirmed! 🎉",
+          message: `Your pass for "${eventTitle || "Event"}" (${ticketTier || "Pass"}) is ready. Ticket Code: ${reg.ticketCode}`,
+          type: "ticket",
+          targetRole: "attendee",
+          userEmail: email,
+          actionUrl: "/portal",
+        });
       }
+
+      // In-App Notification for Organizer
+      await createNotification({
+        title: "New Ticket Sale! 🎟️",
+        message: `${name} just purchased a ${ticketTier || "Standard"} pass for "${eventTitle || "Event"}" (${reg.amountDisplay || "PKR " + reg.amount}).`,
+        type: "ticket",
+        targetRole: "organizer",
+        actionUrl: "/dashboard/registrations",
+      });
 
       console.log(`✅ Successfully processed Stripe Checkout for ${name} (${email}) - Order: ${reg.id}`);
     } catch (dbErr) {

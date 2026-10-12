@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAllRegistrations, getAllEvents, updateRegistration } from "@/lib/db";
+import { getAllRegistrations, getAllEvents, updateRegistration, createNotification } from "@/lib/db";
 import { getDatabase } from "@/lib/mongodb";
 import { MOCK_EVENTS } from "@/lib/data";
 
@@ -190,6 +190,26 @@ export async function POST(request) {
         checkedInAt: new Date().toISOString(),
         status: "Checked In",
       });
+
+      // Real-time notifications for Organizer & Attendee
+      await createNotification({
+        title: "Attendee Checked In ✅",
+        message: `${reg.customerName} verified at the entrance for "${reg.eventTitle || "Event"}".`,
+        type: "checkin",
+        targetRole: "organizer",
+        actionUrl: "/dashboard/attendees",
+      });
+
+      if (reg.customerEmail) {
+        await createNotification({
+          title: "Welcome to the Event! 🎟️",
+          message: `You've been successfully checked in for "${reg.eventTitle || "Event"}". Enjoy the experience!`,
+          type: "checkin",
+          targetRole: "attendee",
+          userEmail: reg.customerEmail,
+          actionUrl: "/portal",
+        });
+      }
 
       return NextResponse.json({
         success: true,

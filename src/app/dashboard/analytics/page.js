@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Sidebar from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Analytics() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -138,6 +139,7 @@ export default function Analytics() {
             >
               <Download size={16} className="mr-2 shrink-0" /> Download Report
             </Button>
+            <NotificationBell role="organizer" />
             <ThemeToggle />
           </div>
         </header>

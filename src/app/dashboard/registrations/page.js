@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Sidebar from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Registrations() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -135,6 +136,7 @@ export default function Registrations() {
               <Download size={18} className="mr-2 text-emerald-600 dark:text-emerald-400" /> Export CSV
             </Button>
 
+            <NotificationBell role="organizer" />
             <ThemeToggle />
           </div>
         </header>

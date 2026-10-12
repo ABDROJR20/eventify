@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Portal() {
   const router = useRouter();
@@ -20,13 +21,16 @@ export default function Portal() {
         const data = await res.json();
         if (data.authenticated && data.user) {
           setUser(data.user);
+        } else {
+          router.replace("/auth?role=attendee&redirect=/portal");
         }
       } catch (err) {
         console.warn("Session check failed:", err);
+        router.replace("/auth?role=attendee&redirect=/portal");
       }
     }
     loadUser();
-  }, []);
+  }, [router]);
 
   const handleLogout = async () => {
     try {
@@ -59,6 +63,7 @@ export default function Portal() {
             </div>
           ) : null}
 
+          <NotificationBell role="attendee" userEmail={user?.email} />
           <ThemeToggle />
 
           {user ? (

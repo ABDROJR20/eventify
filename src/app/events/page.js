@@ -20,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import NotificationBell from "@/components/NotificationBell";
 import { MOCK_EVENTS } from "@/lib/data";
 import { CURRENCY_RATES, formatCurrencyPrice } from "@/lib/currencies";
 
@@ -169,6 +170,7 @@ export default function EventsPage() {
               )}
             </div>
 
+            <NotificationBell role="attendee" userEmail={user?.email} />
             <ThemeToggle />
 
             {user ? (

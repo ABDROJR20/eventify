@@ -1,0 +1,62 @@
+[
+  {
+    "id": "notif_1",
+    "recipientRole": "organizer",
+    "title": "New Ticket Booking 🎟️",
+    "message": "Muhammad Ali booked a ticket for Global Tech Summit 2026 (PKR 49.00).",
+    "type": "ticket",
+    "link": "/dashboard/registrations",
+    "read": true,
+    "createdAt": "2026-10-12T11:59:39.524Z"
+  },
+  {
+    "id": "notif_2",
+    "recipientRole": "organizer",
+    "title": "Stripe Payout Scheduled 💰",
+    "message": "Stripe payout of PKR 20,825 is scheduled to transfer to your linked Meezan Bank account.",
+    "type": "payout",
+    "link": "/dashboard/settings",
+    "read": true,
+    "createdAt": "2026-10-12T11:29:39.524Z"
+  },
+  {
+    "id": "notif_3",
+    "recipientRole": "organizer",
+    "title": "QR Check-in Verified ✅",
+    "message": "Attendee checked in with dynamic QR code at Gate 1 (Karachi Expo Center).",
+    "type": "checkin",
+    "link": "/dashboard",
+    "read": true,
+    "createdAt": "2026-10-12T10:04:39.524Z"
+  },
+  {
+    "id": "notif_4",
+    "recipientRole": "attendee",
+    "title": "Booking Confirmed! 🎟️",
+    "message": "Your ticket for Global Tech Summit 2026 is confirmed. Your 3D Event Pass is ready.",
+    "type": "ticket",
+    "link": "/portal",
+    "read": false,
+    "createdAt": "2026-10-12T11:49:39.524Z"
+  },
+  {
+    "id": "notif_5",
+    "recipientRole": "attendee",
+    "title": "Event Reminder ⏰",
+    "message": "Global Tech Summit 2026 is coming up soon. Present your QR code at entrance.",
+    "type": "event",
+    "link": "/events/evt_1",
+    "read": false,
+    "createdAt": "2026-10-12T09:04:39.524Z"
+  },
+  {
+    "id": "notif_6",
+    "recipientRole": "all",
+    "title": "Eventify 3D Pass Experience Live 🚀",
+    "message": "Interactive 3D passes with real-time motion and QR verification are now active.",
+    "type": "system",
+    "link": "/events",
+    "read": true,
+    "createdAt": "2026-10-11T12:04:39.524Z"
+  }
+]

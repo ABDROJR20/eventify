@@ -34,12 +34,30 @@ export async function POST(request) {
         image: image || null,
       });
     } else {
-      // Existing User -> Update image or role if specified
+      // Existing User -> Check role permission
+      if (role === "organizer" && user.role === "attendee") {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "This Google account is registered as an Attendee. You cannot log in to the Organizer portal with an Attendee account. Please switch to 'I am an Attendee'.",
+          },
+          { status: 403 }
+        );
+      }
+
+      if (role === "attendee" && user.role === "organizer") {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "This Google account is registered as an Organizer. Please switch to 'I am an Organizer' to log in.",
+          },
+          { status: 403 }
+        );
+      }
+
+      // Update image only if not set yet (never mutate role)
       const updates = {};
       if (image && !user.image) updates.image = image;
-      if (role && ["attendee", "organizer"].includes(role) && user.role !== "admin") {
-        updates.role = role;
-      }
       if (Object.keys(updates).length > 0) {
         user = await updateUser(user.email, updates);
       }
