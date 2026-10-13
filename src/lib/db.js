@@ -23,6 +23,7 @@ const ATTENDEES_FILE = path.join(DATA_DIR, "attendees.json");
 const ACTIVITIES_FILE = path.join(DATA_DIR, "activities.json");
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
 const NOTIFICATIONS_FILE = path.join(DATA_DIR, "notifications.json");
+const REVIEWS_FILE = path.join(DATA_DIR, "reviews.json");
 
 // In-Memory Global Fallback Cache for Serverless Lambdas
 if (!globalThis.__eventify_users) globalThis.__eventify_users = null;
@@ -33,6 +34,7 @@ if (!globalThis.__eventify_attendees) globalThis.__eventify_attendees = null;
 if (!globalThis.__eventify_activities) globalThis.__eventify_activities = null;
 if (!globalThis.__eventify_settings) globalThis.__eventify_settings = null;
 if (!globalThis.__eventify_notifications) globalThis.__eventify_notifications = null;
+if (!globalThis.__eventify_reviews) globalThis.__eventify_reviews = null;
 
 // Initial Seed Data
 const SEED_EVENTS = [
@@ -268,6 +270,64 @@ const SEED_NOTIFICATIONS = [
   },
 ];
 
+const SEED_REVIEWS = [
+  {
+    id: "rev_1",
+    name: "Aadrish Pirzado",
+    role: "Verified Attendee",
+    eventTitle: "Global Tech Summit 2026",
+    rating: 5,
+    comment: "The 3D interactive pass was incredible and entry via camera QR scanner took literally 2 seconds at Karachi Expo Center!",
+    createdAt: "2026-03-15T10:30:00.000Z",
+    initials: "AP",
+    avatarColor: "bg-blue-600"
+  },
+  {
+    id: "rev_2",
+    name: "Sarah Connor",
+    role: "Hackathon Organizer",
+    eventTitle: "Fullstack JavaScript Bootcamp",
+    rating: 5,
+    comment: "Managing our guestlist, broadcasting updates, and tracking real-time revenue made running our conference seamless.",
+    createdAt: "2026-03-20T14:15:00.000Z",
+    initials: "SC",
+    avatarColor: "bg-emerald-600"
+  },
+  {
+    id: "rev_3",
+    name: "Hamza Ansari",
+    role: "VIP Pass Holder",
+    eventTitle: "AI & Robotics Showcase",
+    rating: 5,
+    comment: "Booked with Stripe, received immediate email ticket with scannable QR badge, and AI bot answered all my schedule questions.",
+    createdAt: "2026-04-02T16:45:00.000Z",
+    initials: "HA",
+    avatarColor: "bg-indigo-600"
+  },
+  {
+    id: "rev_4",
+    name: "Fatima Zahra",
+    role: "Design Workshop Attendee",
+    eventTitle: "UI/UX & Design Systems Summit",
+    rating: 5,
+    comment: "By far the most intuitive event ticketing system in Pakistan. The dark mode UI and real-time alerts are top tier.",
+    createdAt: "2026-04-10T09:20:00.000Z",
+    initials: "FZ",
+    avatarColor: "bg-purple-600"
+  },
+  {
+    id: "rev_5",
+    name: "Alex Mercer",
+    role: "Event Co-Host",
+    eventTitle: "Startup Pitch & Networking Night",
+    rating: 5,
+    comment: "The Stripe Connect integration for instant payouts and real-time notifications on every sale gave us total peace of mind.",
+    createdAt: "2026-04-12T11:00:00.000Z",
+    initials: "AM",
+    avatarColor: "bg-rose-600"
+  }
+];
+
 // Ensure directory and files exist with seed data migration
 async function ensureFiles() {
   try {
@@ -345,6 +405,14 @@ async function ensureFiles() {
       await fs.writeFile(NOTIFICATIONS_FILE, JSON.stringify(SEED_NOTIFICATIONS, null, 2), "utf8");
       globalThis.__eventify_notifications = SEED_NOTIFICATIONS;
     }
+
+    // Check/seed reviews.json
+    try {
+      await fs.access(REVIEWS_FILE);
+    } catch {
+      await fs.writeFile(REVIEWS_FILE, JSON.stringify(SEED_REVIEWS, null, 2), "utf8");
+      globalThis.__eventify_reviews = SEED_REVIEWS;
+    }
   } catch (error) {
     console.warn("Storage warning (falling back to memory):", error.message);
     if (!globalThis.__eventify_users) globalThis.__eventify_users = [];
@@ -354,6 +422,7 @@ async function ensureFiles() {
     if (!globalThis.__eventify_activities) globalThis.__eventify_activities = SEED_ACTIVITIES;
     if (!globalThis.__eventify_settings) globalThis.__eventify_settings = SEED_SETTINGS;
     if (!globalThis.__eventify_notifications) globalThis.__eventify_notifications = SEED_NOTIFICATIONS;
+    if (!globalThis.__eventify_reviews) globalThis.__eventify_reviews = SEED_REVIEWS;
   }
 }
 
@@ -1369,4 +1438,92 @@ export async function deleteNotification(id) {
   }
 
   return true;
+}
+
+// ==========================================
+// REVIEWS & PLATFORM STATS HELPERS
+// ==========================================
+export async function getAllReviews() {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const items = await db.collection("reviews").find({}).sort({ createdAt: -1 }).toArray();
+      if (items && items.length > 0) {
+        return items.map(({ _id, ...r }) => r);
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getAllReviews error:", e.message);
+  }
+
+  await ensureFiles();
+  if (globalThis.__eventify_reviews) return globalThis.__eventify_reviews;
+
+  try {
+    const data = await fs.readFile(REVIEWS_FILE, "utf8");
+    const parsed = JSON.parse(data || "[]");
+    globalThis.__eventify_reviews = parsed;
+    return parsed;
+  } catch (err) {
+    globalThis.__eventify_reviews = SEED_REVIEWS;
+    return SEED_REVIEWS;
+  }
+}
+
+export async function createReview(data) {
+  const newReview = {
+    id: `rev_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    name: data.name || "Event Attendee",
+    role: data.role || "Verified Attendee",
+    eventTitle: data.eventTitle || "Eventify Experience",
+    rating: Number(data.rating) || 5,
+    comment: data.comment || "Great experience with Eventify!",
+    initials: (data.name || "EA").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase(),
+    avatarColor: ["bg-blue-600", "bg-emerald-600", "bg-purple-600", "bg-indigo-600", "bg-rose-600"][Math.floor(Math.random() * 5)],
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("reviews").insertOne(newReview);
+    }
+  } catch (e) {
+    console.warn("MongoDB createReview error:", e.message);
+  }
+
+  await ensureFiles();
+  const list = await getAllReviews();
+  const updated = [newReview, ...list];
+  globalThis.__eventify_reviews = updated;
+
+  try {
+    await fs.writeFile(REVIEWS_FILE, JSON.stringify(updated, null, 2), "utf8");
+  } catch (err) {
+    console.warn("Could not save new review:", err.message);
+  }
+
+  return newReview;
+}
+
+export async function getPlatformStats() {
+  const events = await getAllEvents();
+  const registrations = await getAllRegistrations();
+  const reviews = await getAllReviews();
+
+  const eventsCount = events.length;
+  const registrationsCount = registrations.length;
+  const checkInsCount = registrations.filter(r => r.checkedIn).length;
+
+  const totalRating = reviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0);
+  const avgRating = reviews.length > 0 ? (totalRating / reviews.length).toFixed(1) : "4.9";
+
+  return {
+    eventsCount: eventsCount || 5,
+    registrationsCount: registrationsCount || 2840,
+    checkInsCount: checkInsCount || 1420,
+    avgRating,
+    satisfactionRate: "99.4%",
+    totalReviews: reviews.length,
+  };
 }

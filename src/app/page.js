@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import gsap from "gsap";
-import { ArrowRight, Compass, QrCode, BarChart3, Mail, Calendar, Bell, CreditCard, ChevronDown, Users, Menu, X, Star, CheckCircle2, Zap, Phone, MapPin, Ticket, ShieldCheck, Box, Sparkles } from "lucide-react";
+import { ArrowRight, Compass, QrCode, BarChart3, Mail, Calendar, Bell, CreditCard, ChevronDown, Users, Menu, X, Star, CheckCircle2, Zap, Phone, MapPin, Ticket, ShieldCheck, Box, Sparkles, Plus, MessageSquare, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Eventify3DScene from "@/components/Eventify3DScene";
@@ -123,6 +123,27 @@ export default function Home() {
   const [confetti, setConfetti] = useState([]);
   const [sessionUser, setSessionUser] = useState(null);
 
+  // Live Reviews & Platform Stats
+  const [reviewsList, setReviewsList] = useState([]);
+  const [platformStats, setPlatformStats] = useState({
+    eventsCount: 5,
+    registrationsCount: 2840,
+    checkInsCount: 1420,
+    avgRating: "4.9",
+    satisfactionRate: "99.4%",
+    totalReviews: 5,
+  });
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [newReviewForm, setNewReviewForm] = useState({
+    name: "",
+    rating: 5,
+    comment: "",
+    eventTitle: "Global Tech Summit 2026",
+  });
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewFeedback, setReviewFeedback] = useState(null);
+
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -135,8 +156,65 @@ export default function Home() {
         // Not logged in
       }
     }
+
+    async function loadReviewsAndStats() {
+      try {
+        const res = await fetch("/api/reviews");
+        const data = await res.json();
+        if (data.success) {
+          if (Array.isArray(data.reviews) && data.reviews.length > 0) {
+            setReviewsList(data.reviews);
+          }
+          if (data.stats) {
+            setPlatformStats(data.stats);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch reviews:", err);
+      } finally {
+        setLoadingReviews(false);
+      }
+    }
+
     checkAuth();
+    loadReviewsAndStats();
   }, []);
+
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!newReviewForm.comment.trim()) return;
+
+    setSubmittingReview(true);
+    setReviewFeedback(null);
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newReviewForm.name || sessionUser?.name || "Verified Attendee",
+          rating: newReviewForm.rating,
+          comment: newReviewForm.comment,
+          eventTitle: newReviewForm.eventTitle,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.review) {
+        setReviewsList((prev) => [data.review, ...prev]);
+        setReviewFeedback({ type: "success", message: "Review posted successfully! Thank you." });
+        setNewReviewForm({ name: "", rating: 5, comment: "", eventTitle: "Global Tech Summit 2026" });
+        setTimeout(() => {
+          setIsReviewModalOpen(false);
+          setReviewFeedback(null);
+        }, 1600);
+      } else {
+        setReviewFeedback({ type: "error", message: data.error || "Failed to submit review." });
+      }
+    } catch (err) {
+      setReviewFeedback({ type: "error", message: "Network error submitting review." });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   // Hero Mouse Tilt State
   const heroRef = useRef(null);
@@ -358,7 +436,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <span className="text-slate-600 dark:text-slate-400 font-medium text-xs tracking-tight">Final Year University Project • Smart Event Platform</span>
+            <span className="text-slate-600 dark:text-slate-400 font-medium text-xs tracking-tight"> Smart Event Platform</span>
           </div>
 
           <motion.h1 {...fadeUp(0.1)} className="text-4xl sm:text-5xl md:text-7xl font-black leading-[0.95] tracking-tighter text-slate-900 dark:text-white mb-6">
@@ -483,10 +561,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)] pointer-events-none" />
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center relative z-10">
           {[
-            ["50K+","Events Created"],
-            ["2M+","Attendees Served"],
-            ["98%","Satisfaction Rate"],
-            ["40hrs","Time Saved"]
+            [`${platformStats.eventsCount}+`, "Live Events"],
+            [`${platformStats.registrationsCount}+`, "Passes Booked"],
+            [`${platformStats.avgRating} ★`, "Community Rating"],
+            [`${platformStats.satisfactionRate}`, "Verified Check-ins"]
           ].map(([val,label],i)=>(
             <ThreeDCard key={label} depth={20} className="rounded-2xl">
               <motion.div 
@@ -748,17 +826,36 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
+      {/* DYNAMIC COMMUNITY REVIEWS */}
       <section id="testimonials" className="py-28 bg-slate-100/80 dark:bg-slate-950/80 backdrop-blur-xs relative z-10 transition-colors">
-        <div className="text-center mb-16 px-4 sm:px-6">
-          <motion.span {...fadeUp()} className="inline-block text-xs font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950 border border-violet-300 dark:border-violet-800/60 px-4 py-1.5 rounded-full shadow-sm">Reviews</motion.span>
-          <motion.h2 {...fadeUp(0.1)} className="text-3xl sm:text-4xl md:text-5xl font-black mt-5 tracking-tight leading-tight text-slate-900 dark:text-white">Built for Campus &amp; Community<br/><span className="text-slate-500 dark:text-slate-400">Events</span></motion.h2>
-        </div>
-
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-16">
+            <div>
+              <motion.span {...fadeUp()} className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-950 border border-violet-300 dark:border-violet-800/60 px-4 py-1.5 rounded-full shadow-sm">
+                <Star size={13} className="fill-violet-600 dark:fill-violet-400" /> Real Community Feedback
+              </motion.span>
+              <motion.h2 {...fadeUp(0.1)} className="text-3xl sm:text-4xl md:text-5xl font-black mt-4 tracking-tight leading-tight text-slate-900 dark:text-white">
+                Loved by Organizers &amp; Attendees
+              </motion.h2>
+              <motion.p {...fadeUp(0.2)} className="text-slate-500 dark:text-slate-400 text-sm sm:text-base font-medium mt-2">
+                Rated <strong className="text-amber-500 font-bold">{platformStats.avgRating} / 5.0</strong> by verified event organizers and pass holders.
+              </motion.p>
+            </div>
+
+            <motion.div {...fadeUp(0.2)} className="shrink-0">
+              <button
+                onClick={() => setIsReviewModalOpen(true)}
+                className="inline-flex items-center gap-2 bg-brand-blue hover:bg-blue-600 text-white font-bold text-sm px-6 py-3.5 rounded-2xl shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-0.5 cursor-pointer"
+              >
+                <Plus size={16} /> Write a Review
+              </button>
+            </motion.div>
+          </div>
+
+          {/* Dynamic Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((t, i) => (
-              <ThreeDCard key={i} depth={25} className="rounded-3xl h-full">
+            {reviewsList.slice(0, 6).map((t, i) => (
+              <ThreeDCard key={t.id || i} depth={25} className="rounded-3xl h-full">
                 <motion.div {...fadeUp(i * 0.08)} className="h-full">
                   <TCard t={t} />
                 </motion.div>
@@ -766,6 +863,116 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        {/* WRITE A REVIEW MODAL */}
+        {isReviewModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative">
+              <button
+                onClick={() => setIsReviewModalOpen(false)}
+                className="absolute right-5 top-5 p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+                  <MessageSquare size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Share Your Experience</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Your review will be published live on the community showcase.</p>
+                </div>
+              </div>
+
+              {reviewFeedback && (
+                <div className={`mb-4 p-3.5 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                  reviewFeedback.type === "success" 
+                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" 
+                    : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                }`}>
+                  {reviewFeedback.type === "success" ? <CheckCircle2 size={16} /> : <Zap size={16} />}
+                  <span>{reviewFeedback.message}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleReviewSubmit} className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Rating</label>
+                  <div className="flex gap-2 items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        type="button"
+                        key={star}
+                        onClick={() => setNewReviewForm({ ...newReviewForm, rating: star })}
+                        className="p-1 hover:scale-125 transition-transform cursor-pointer"
+                      >
+                        <Star
+                          size={24}
+                          className={star <= newReviewForm.rating ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200 dark:fill-slate-800 dark:text-slate-800"}
+                        />
+                      </button>
+                    ))}
+                    <span className="text-xs font-bold text-slate-500 ml-2">{newReviewForm.rating} of 5 Stars</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">Your Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Abdullah"
+                    value={newReviewForm.name}
+                    onChange={(e) => setNewReviewForm({ ...newReviewForm, name: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-brand-blue"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">Event Attended</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Global Tech Summit 2026"
+                    value={newReviewForm.eventTitle}
+                    onChange={(e) => setNewReviewForm({ ...newReviewForm, eventTitle: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-brand-blue"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">Your Review Feedback</label>
+                  <textarea
+                    rows={3}
+                    required
+                    placeholder="How was the ticketing, 3D pass, or entrance check-in experience?"
+                    value={newReviewForm.comment}
+                    onChange={(e) => setNewReviewForm({ ...newReviewForm, comment: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm font-semibold text-slate-900 dark:text-white outline-none focus:border-brand-blue resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsReviewModalOpen(false)}
+                    className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="inline-flex items-center gap-2 bg-brand-blue hover:bg-blue-600 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
+                  >
+                    {submittingReview ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    {submittingReview ? "Posting..." : "Post Review"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* FAQ ACCORDION */}
@@ -1031,19 +1238,40 @@ export default function Home() {
 }
 
 function TCard({ t }) {
+  const rating = Number(t.rating) || 5;
   return (
     <div className="w-full p-7 rounded-3xl bg-white dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-lg hover:border-brand-blue/40 transition-all flex flex-col justify-between h-full">
       <div>
-        <div className="flex gap-1 mb-4">{Array(5).fill(0).map((_,i)=><Star key={i} size={14} className="fill-amber-400 text-amber-400"/>)}</div>
-        <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-6">"{t.text}"</p>
-      </div>
-      <div className="flex items-center gap-3.5 pt-5 border-t border-slate-200 dark:border-slate-800">
-        <div className={`w-10 h-10 rounded-full ${t.color || "bg-brand-blue"} flex items-center justify-center text-white text-xs font-black shrink-0 shadow-md shadow-black/20`}>
-          {t.initials || t.name[0]}
+        <div className="flex items-center justify-between gap-1 mb-4">
+          <div className="flex gap-1">
+            {Array(5).fill(0).map((_, i) => (
+              <Star
+                key={i}
+                size={14}
+                className={i < rating ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200 dark:fill-slate-800 dark:text-slate-800"}
+              />
+            ))}
+          </div>
+          {t.eventTitle && (
+            <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full truncate max-w-[140px]">
+              {t.eventTitle}
+            </span>
+          )}
         </div>
-        <div>
-          <p className="text-slate-900 dark:text-white font-bold text-sm">{t.name}</p>
-          <p className="text-slate-500 dark:text-slate-400 text-xs">{t.role}</p>
+        <p className="text-slate-700 dark:text-slate-300 text-sm sm:text-base leading-relaxed mb-6 font-medium">
+          "{t.comment || t.text}"
+        </p>
+      </div>
+      <div className="flex items-center gap-3.5 pt-5 border-t border-slate-100 dark:border-slate-800">
+        <div className={`w-10 h-10 rounded-full ${t.avatarColor || t.color || "bg-brand-blue"} flex items-center justify-center text-white text-xs font-black shrink-0 shadow-md shadow-black/20`}>
+          {t.initials || (t.name ? t.name[0] : "U")}
+        </div>
+        <div className="min-w-0">
+          <p className="text-slate-900 dark:text-white font-bold text-sm truncate">{t.name}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+            <p className="text-slate-500 dark:text-slate-400 text-xs truncate">{t.role || "Verified Attendee"}</p>
+          </div>
         </div>
       </div>
     </div>

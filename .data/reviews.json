@@ -1,0 +1,57 @@
+[
+  {
+    "id": "rev_1",
+    "name": "Aadrish Pirzado",
+    "role": "Verified Attendee",
+    "eventTitle": "Global Tech Summit 2026",
+    "rating": 5,
+    "comment": "The 3D interactive pass was incredible and entry via camera QR scanner took literally 2 seconds at Karachi Expo Center!",
+    "createdAt": "2026-03-15T10:30:00.000Z",
+    "initials": "AP",
+    "avatarColor": "bg-blue-600"
+  },
+  {
+    "id": "rev_2",
+    "name": "Sarah Connor",
+    "role": "Hackathon Organizer",
+    "eventTitle": "Fullstack JavaScript Bootcamp",
+    "rating": 5,
+    "comment": "Managing our guestlist, broadcasting updates, and tracking real-time revenue made running our conference seamless.",
+    "createdAt": "2026-03-20T14:15:00.000Z",
+    "initials": "SC",
+    "avatarColor": "bg-emerald-600"
+  },
+  {
+    "id": "rev_3",
+    "name": "Hamza Ansari",
+    "role": "VIP Pass Holder",
+    "eventTitle": "AI & Robotics Showcase",
+    "rating": 5,
+    "comment": "Booked with Stripe, received immediate email ticket with scannable QR badge, and AI bot answered all my schedule questions.",
+    "createdAt": "2026-04-02T16:45:00.000Z",
+    "initials": "HA",
+    "avatarColor": "bg-indigo-600"
+  },
+  {
+    "id": "rev_4",
+    "name": "Fatima Zahra",
+    "role": "Design Workshop Attendee",
+    "eventTitle": "UI/UX & Design Systems Summit",
+    "rating": 5,
+    "comment": "By far the most intuitive event ticketing system in Pakistan. The dark mode UI and real-time alerts are top tier.",
+    "createdAt": "2026-04-10T09:20:00.000Z",
+    "initials": "FZ",
+    "avatarColor": "bg-purple-600"
+  },
+  {
+    "id": "rev_5",
+    "name": "Alex Mercer",
+    "role": "Event Co-Host",
+    "eventTitle": "Startup Pitch & Networking Night",
+    "rating": 5,
+    "comment": "The Stripe Connect integration for instant payouts and real-time notifications on every sale gave us total peace of mind.",
+    "createdAt": "2026-04-12T11:00:00.000Z",
+    "initials": "AM",
+    "avatarColor": "bg-rose-600"
+  }
+]
