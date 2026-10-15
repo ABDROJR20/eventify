@@ -37,10 +37,9 @@ export default function AdminLogin() {
         throw new Error(data.message || "Administrative authorization failed");
       }
 
-      router.push("/admin");
+      window.location.replace("/admin");
     } catch (err) {
       setError(err.message || "Failed to authorize");
-    } finally {
       setLoading(false);
     }
   };

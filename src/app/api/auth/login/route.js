@@ -77,11 +77,21 @@ export async function POST(request) {
     const token = await createToken(tokenPayload);
     await setAuthCookie(token);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: "Logged in successfully",
       user: tokenPayload,
     });
+
+    response.cookies.set("eventify_session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(

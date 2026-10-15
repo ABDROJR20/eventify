@@ -80,7 +80,7 @@ export async function POST(request) {
     const token = await createToken(tokenPayload);
     await setAuthCookie(token);
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         message: "Account created successfully",
@@ -88,6 +88,16 @@ export async function POST(request) {
       },
       { status: 201 }
     );
+
+    response.cookies.set("eventify_session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
   } catch (error) {
     console.error("Registration error:", error);
     return NextResponse.json(

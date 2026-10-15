@@ -104,14 +104,22 @@ function AuthContent() {
         throw new Error(data.message || "Authentication failed. Please check your credentials.");
       }
 
-      const targetUrl = searchParams.get("redirect") || searchParams.get("next") || theme.linkPath;
+      const authenticatedRole = data.user?.role || role;
+      let targetUrl = searchParams.get("redirect") || searchParams.get("next");
+      if (targetUrl) {
+        if (authenticatedRole === "attendee" && targetUrl.startsWith("/dashboard")) {
+          targetUrl = "/events";
+        }
+      } else {
+        targetUrl = authenticatedRole === "organizer" ? "/dashboard" : "/events";
+      }
+
       setSuccess(isLogin ? "Login successful! Redirecting..." : "Account created! Redirecting...");
       setTimeout(() => {
-        router.push(targetUrl);
-      }, 700);
+        window.location.replace(targetUrl);
+      }, 250);
     } catch (err) {
       setError(err.message || "An unexpected error occurred.");
-    } finally {
       setLoading(false);
     }
   };
@@ -178,14 +186,24 @@ function AuthContent() {
               throw new Error(data.message || "Google authentication failed on server.");
             }
 
-            const targetUrl = searchParams.get("redirect") || searchParams.get("next") || theme.linkPath;
+            const authenticatedRole = data.user?.role || role;
+            let targetUrl = searchParams.get("redirect") || searchParams.get("next");
+            if (targetUrl) {
+              if (authenticatedRole === "attendee" && targetUrl.startsWith("/dashboard")) {
+                targetUrl = "/events";
+              }
+            } else {
+              targetUrl = authenticatedRole === "organizer" ? "/dashboard" : "/events";
+            }
+
             setSuccess("Successfully authenticated with Google! Redirecting...");
+            
+            // Hard navigation immediately initiates browser document load, passes fresh cookie, and prevents client router stall
             setTimeout(() => {
-              router.push(targetUrl);
-            }, 700);
+              window.location.replace(targetUrl);
+            }, 250);
           } catch (err) {
             setError(err.message || "Google authentication failed.");
-          } finally {
             setGoogleLoading(false);
           }
         },
