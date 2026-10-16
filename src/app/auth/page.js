@@ -1,6 +1,6 @@
 "use client";
 import { useState, Suspense, useEffect } from "react";
-import { Mail, Lock, User, ArrowRight, AlertCircle, RefreshCw, X, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, AlertCircle, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
@@ -9,10 +9,16 @@ import { useSearchParams, useRouter } from "next/navigation";
 function AuthContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialRole = searchParams.get("role") === "attendee" ? "attendee" : "organizer";
+
+  // If attendee role is passed, redirect straight to public events
+  useEffect(() => {
+    if (searchParams.get("role") === "attendee") {
+      router.replace("/events");
+    }
+  }, [searchParams, router]);
 
   const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState(initialRole);
+  const role = "organizer";
 
   // Form states
   const [name, setName] = useState("");
@@ -40,35 +46,21 @@ function AuthContent() {
     }
   }, []);
 
-  useEffect(() => {
-    if (searchParams.get("role")) {
-      setRole(searchParams.get("role"));
-    }
-  }, [searchParams]);
-
-  const isAttendee = role === "attendee";
-
-  // Theme configuration based on role
+  // Theme configuration for Organizer
   const theme = {
-    color: isAttendee ? "emerald-500" : "brand-blue",
-    bgClasses: isAttendee ? "from-emerald-500/80" : "from-brand-blue/80",
-    textClasses: isAttendee ? "text-emerald-500" : "text-brand-blue",
-    btnClasses: isAttendee
-      ? "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30"
-      : "bg-brand-blue hover:bg-brand-blue/90 shadow-blue-500/30",
-    inputFocus: isAttendee
-      ? "focus:ring-emerald-500/10 focus:border-emerald-500"
-      : "focus:ring-brand-blue/10 focus:border-brand-blue",
-    title: isAttendee ? "The Joy of" : "The Art of",
-    subtitle: isAttendee ? "Experiencing" : "Curating",
-    desc: isAttendee
-      ? "Discover incredible events, connect with passionate communities, and create unforgettable memories."
-      : "Experience events like never before. From elite summits to underground concerts, architect your rhythm.",
-    loginBtnText: isAttendee ? "Login to Events" : "Login to Dashboard",
-    linkPath: isAttendee ? "/events" : "/dashboard",
+    color: "brand-blue",
+    bgClasses: "from-brand-blue/80",
+    textClasses: "text-brand-blue",
+    btnClasses: "bg-brand-blue hover:bg-brand-blue/90 shadow-blue-500/30",
+    inputFocus: "focus:ring-brand-blue/10 focus:border-brand-blue",
+    title: "The Art of",
+    subtitle: "Curating",
+    desc: "Experience events like never before. From elite summits to underground concerts, architect your rhythm and manage your attendees effortlessly.",
+    loginBtnText: "Login to Dashboard",
+    linkPath: "/dashboard",
   };
 
-  // Submit Credentials (Login or Register)
+  // Submit Credentials (Organizer Login or Registration)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -89,8 +81,8 @@ function AuthContent() {
     try {
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
       const payload = isLogin
-        ? { email, password, role }
-        : { name, email, password, role };
+        ? { email, password, role: "organizer" }
+        : { name, email, password, role: "organizer" };
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -104,17 +96,9 @@ function AuthContent() {
         throw new Error(data.message || "Authentication failed. Please check your credentials.");
       }
 
-      const authenticatedRole = data.user?.role || role;
-      let targetUrl = searchParams.get("redirect") || searchParams.get("next");
-      if (targetUrl) {
-        if (authenticatedRole === "attendee" && targetUrl.startsWith("/dashboard")) {
-          targetUrl = "/events";
-        }
-      } else {
-        targetUrl = authenticatedRole === "organizer" ? "/dashboard" : "/events";
-      }
+      const targetUrl = searchParams.get("redirect") || searchParams.get("next") || "/dashboard";
 
-      setSuccess(isLogin ? "Login successful! Redirecting..." : "Account created! Redirecting...");
+      setSuccess(isLogin ? "Login successful! Redirecting to Dashboard..." : "Organizer account created! Redirecting...");
       setTimeout(() => {
         window.location.replace(targetUrl);
       }, 250);
@@ -124,7 +108,7 @@ function AuthContent() {
     }
   };
 
-  // Trigger Google Official OAuth Popup
+  // Trigger Google Official OAuth Popup for Organizer
   const handleGoogleSignIn = () => {
     setError("");
     setSuccess("");
@@ -136,7 +120,7 @@ function AuthContent() {
       return;
     }
 
-    if (typeof window === "undefined" || !window.google?.accounts?.oauth2) {
+    if (typeof window !== "undefined" && !window.google?.accounts?.oauth2) {
       setError("Google authentication service is initializing. Please try again in a few seconds.");
       return;
     }
@@ -168,7 +152,7 @@ function AuthContent() {
 
             const profile = await userInfoRes.json();
 
-            // Establish session with Eventify backend
+            // Establish session with Eventify backend as organizer
             const authRes = await fetch("/api/auth/google", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -176,7 +160,7 @@ function AuthContent() {
                 email: profile.email,
                 name: profile.name,
                 image: profile.picture,
-                role,
+                role: "organizer",
               }),
             });
 
@@ -186,19 +170,9 @@ function AuthContent() {
               throw new Error(data.message || "Google authentication failed on server.");
             }
 
-            const authenticatedRole = data.user?.role || role;
-            let targetUrl = searchParams.get("redirect") || searchParams.get("next");
-            if (targetUrl) {
-              if (authenticatedRole === "attendee" && targetUrl.startsWith("/dashboard")) {
-                targetUrl = "/events";
-              }
-            } else {
-              targetUrl = authenticatedRole === "organizer" ? "/dashboard" : "/events";
-            }
+            const targetUrl = searchParams.get("redirect") || searchParams.get("next") || "/dashboard";
 
-            setSuccess("Successfully authenticated with Google! Redirecting...");
-            
-            // Hard navigation immediately initiates browser document load, passes fresh cookie, and prevents client router stall
+            setSuccess("Successfully authenticated with Google! Redirecting to Dashboard...");
             setTimeout(() => {
               window.location.replace(targetUrl);
             }, 250);
@@ -207,7 +181,7 @@ function AuthContent() {
             setGoogleLoading(false);
           }
         },
-        error_callback: (err) => {
+        error_callback: () => {
           setGoogleLoading(false);
           setError("Failed to open Google login popup. Please check your popup blocker.");
         },
@@ -222,25 +196,24 @@ function AuthContent() {
 
   return (
     <main className="min-h-screen flex bg-white dark:bg-slate-950 font-sans transition-colors duration-500 relative">
-      {/* Left side: Image & Branding */}
+      {/* Left side: Image & Branding (Organizer focused) */}
       <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-slate-950 items-center justify-center p-12 xl:p-20">
         <div className="absolute inset-0 opacity-40">
           <img
-            src={
-              isAttendee
-                ? "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop"
-                : "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2070&auto=format&fit=crop"
-            }
+            src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=2070&auto=format&fit=crop"
             className="w-full h-full object-cover transition-opacity duration-500"
-            alt="Crowd"
+            alt="Organizer Event Stage"
           />
-          <div className={`absolute inset-0 bg-linear-to-tr ${theme.bgClasses} to-transparent transition-colors duration-500`}></div>
+          <div className="absolute inset-0 bg-linear-to-tr from-brand-blue/80 to-transparent transition-colors duration-500"></div>
         </div>
 
         <div className="relative z-10 text-white max-w-lg">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-blue/20 border border-brand-blue/40 text-blue-200 text-xs font-black uppercase tracking-wider mb-6">
+            Organizer Portal
+          </div>
           <h1 className="text-6xl xl:text-7xl font-black mb-6 leading-[0.9] tracking-tighter">
             {theme.title} <br />
-            <span className={`${theme.textClasses} italic transition-colors duration-500`}>{theme.subtitle}</span> Moments.
+            <span className="text-brand-blue italic transition-colors duration-500">{theme.subtitle}</span> Moments.
           </h1>
           <p className="text-xl text-slate-300 font-medium leading-relaxed mb-8">
             {theme.desc}
@@ -249,50 +222,40 @@ function AuthContent() {
           <div className="flex items-center gap-6 bg-white/5 backdrop-blur-xl p-6 rounded-[2rem] border border-white/10 shadow-2xl">
             <div className="flex -space-x-4">
               {[1, 2, 3, 4].map((i) => (
-                <img key={i} src={`https://i.pravatar.cc/100?u=${i}`} className="w-12 h-12 rounded-full border-4 border-slate-950" alt="User" />
+                <img key={i} src={`https://i.pravatar.cc/100?u=${i}`} className="w-12 h-12 rounded-full border-4 border-slate-950" alt="Curator" />
               ))}
             </div>
             <p className="text-sm font-black uppercase tracking-widest text-slate-100">
-              Join 50k+ {isAttendee ? "attendees" : "curators"}
+              Join 50k+ curators
             </p>
           </div>
         </div>
       </div>
 
-      {/* Right side: Auth Form */}
+      {/* Right side: Organizer Auth Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8 xl:p-12 bg-slate-50/50 dark:bg-slate-900/40">
         <div className="w-full max-w-md">
-          {/* Role Toggle Switch */}
-          <div className="flex bg-slate-200/50 dark:bg-slate-800/80 p-1 rounded-2xl mb-6">
-            <button
-              type="button"
-              onClick={() => setRole("attendee")}
-              className={`flex-1 py-3 text-sm font-black rounded-xl transition-all cursor-pointer ${
-                isAttendee ? "bg-white dark:bg-slate-900 shadow-md text-emerald-500" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
-            >
-              I am an Attendee
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("organizer")}
-              className={`flex-1 py-3 text-sm font-black rounded-xl transition-all cursor-pointer ${
-                !isAttendee ? "bg-white dark:bg-slate-900 shadow-md text-brand-blue" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
-            >
-              I am an Organizer
-            </button>
-          </div>
-
+          {/* Header */}
           <div className="mb-6">
-            <h2 className={`${theme.textClasses} text-xl font-black mb-3 tracking-tighter italic transition-colors duration-500`}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full bg-brand-blue/10 text-brand-blue border border-brand-blue/20">
+                Organizer Portal
+              </span>
+              <Link
+                href="/events"
+                className="text-xs font-bold text-slate-500 hover:text-brand-blue transition-colors flex items-center gap-1"
+              >
+                Browse Public Events →
+              </Link>
+            </div>
+            <h2 className="text-brand-blue text-xl font-black mb-2 tracking-tighter italic">
               Eventify
             </h2>
             <h3 className="text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tighter leading-none">
               {isLogin ? "Welcome back" : "Begin Your Journey"}
             </h3>
             <p className="text-slate-500 dark:text-slate-400 font-medium text-base">
-              {isLogin ? `Log in to your ${role} account.` : "Already have an account? "}
+              {isLogin ? "Log in to your organizer account. " : "Already have an organizer account? "}
               <button
                 type="button"
                 onClick={() => {
@@ -300,7 +263,7 @@ function AuthContent() {
                   setError("");
                   setSuccess("");
                 }}
-                className={`${theme.textClasses} font-black hover:underline transition-colors duration-500 cursor-pointer`}
+                className="text-brand-blue font-black hover:underline cursor-pointer"
               >
                 {isLogin ? "Sign up for free" : "Sign in here."}
               </button>
@@ -316,7 +279,7 @@ function AuthContent() {
           )}
 
           {success && (
-            <div className="mb-4 p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl flex items-center gap-3 text-emerald-700 dark:text-emerald-300 text-sm font-bold">
+            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 rounded-2xl flex items-center gap-3 text-brand-blue dark:text-blue-300 text-sm font-bold">
               <RefreshCw className="animate-spin shrink-0" size={18} />
               <span>{success}</span>
             </div>
@@ -418,7 +381,7 @@ function AuthContent() {
                 </label>
                 <Link
                   href="/auth/forgot-password"
-                  className={`text-slate-400 hover:${theme.textClasses} transition-colors`}
+                  className="text-slate-400 hover:text-brand-blue transition-colors"
                 >
                   Forgot Password?
                 </Link>
@@ -442,13 +405,23 @@ function AuthContent() {
             </Button>
           </form>
 
+          {/* Attendee navigation prompt */}
+          <div className="mt-8 pt-6 border-t border-slate-200/70 dark:border-slate-800/70 text-center">
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+              Looking for events to attend?{" "}
+              <Link href="/events" className="font-black text-emerald-600 hover:text-emerald-500 hover:underline inline-flex items-center gap-1">
+                Explore Public Events →
+              </Link>
+            </p>
+          </div>
+
           <p className="mt-6 text-center text-xs text-slate-400 font-medium leading-relaxed">
             By continuing, you agree to our <br />
-            <Link href="/terms" className={`font-black text-slate-600 dark:text-slate-400 cursor-pointer hover:${theme.textClasses} transition-colors`}>
+            <Link href="/terms" className="font-black text-slate-600 dark:text-slate-400 cursor-pointer hover:text-brand-blue transition-colors">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className={`font-black text-slate-600 dark:text-slate-400 cursor-pointer hover:${theme.textClasses} transition-colors`}>
+            <Link href="/privacy" className="font-black text-slate-600 dark:text-slate-400 cursor-pointer hover:text-brand-blue transition-colors">
               Privacy Policy
             </Link>
             .

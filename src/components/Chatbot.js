@@ -264,14 +264,22 @@ export default function Chatbot() {
         // User is ALREADY signed in -> Go directly to destination!
         router.push(destinationUrl);
       } else {
-        // User is NOT signed in -> Redirect to login page first, preserving destination!
-        const authRedirectUrl = `/auth?role=attendee&redirect=${encodeURIComponent(destinationUrl)}`;
-        router.push(authRedirectUrl);
+        // If destination requires organizer authentication
+        if (destinationUrl.startsWith("/dashboard") || destinationUrl.startsWith("/portal")) {
+          const authRedirectUrl = `/auth?role=organizer&redirect=${encodeURIComponent(destinationUrl)}`;
+          router.push(authRedirectUrl);
+        } else {
+          // Public events or info pages - navigate directly
+          router.push(destinationUrl);
+        }
       }
     } catch (err) {
-      // Fallback on error: safely route to auth with redirect param
-      const authRedirectUrl = `/auth?role=attendee&redirect=${encodeURIComponent(destinationUrl)}`;
-      router.push(authRedirectUrl);
+      if (destinationUrl.startsWith("/dashboard") || destinationUrl.startsWith("/portal")) {
+        const authRedirectUrl = `/auth?role=organizer&redirect=${encodeURIComponent(destinationUrl)}`;
+        router.push(authRedirectUrl);
+      } else {
+        router.push(destinationUrl);
+      }
     }
   };
 

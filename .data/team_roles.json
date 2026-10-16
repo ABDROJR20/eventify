@@ -1,0 +1,24 @@
+[
+  {
+    "id": "role_seed_1",
+    "name": "Gate Scanner Staff",
+    "email": "scanner@eventify.pk",
+    "eventId": "evt_1",
+    "eventTitle": "Global Tech Summit 2026",
+    "roleTitle": "Gate Scanner & Check-in",
+    "permissions": {
+      "canCheckIn": true,
+      "canViewAttendees": true,
+      "canEditEvent": false,
+      "canSendBroadcast": false,
+      "canViewRevenue": false
+    },
+    "status": "Active",
+    "invitedBy": "usr_1791805734421_mwzyzz5",
+    "invitedByEmail": "hafizabdullah.munawar786@gmail.com",
+    "invitedByName": "Abdullah Munawar",
+    "inviteToken": "inv_seed_token_1",
+    "createdAt": "2026-04-01T10:00:00.000Z",
+    "updatedAt": "2026-04-01T10:00:00.000Z"
+  }
+]

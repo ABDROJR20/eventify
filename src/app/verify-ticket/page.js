@@ -37,6 +37,7 @@ function VerifyTicketContent() {
   const [errorMsg, setErrorMsg] = useState("");
   const [ticketDetails, setTicketDetails] = useState(null);
   const [checkInSuccess, setCheckInSuccess] = useState(false);
+  const [checkInError, setCheckInError] = useState("");
 
   const performVerification = async (codeToVerify) => {
     const code = (codeToVerify !== undefined ? codeToVerify : inputCode).trim();
@@ -46,6 +47,7 @@ function VerifyTicketContent() {
     }
 
     setErrorMsg("");
+    setCheckInError("");
     setIsVerifying(true);
 
     try {
@@ -82,6 +84,7 @@ function VerifyTicketContent() {
   const handleCheckIn = async () => {
     if (!ticketDetails?.registration?.ticketCode) return;
     setIsCheckingIn(true);
+    setCheckInError("");
 
     try {
       const res = await fetch("/api/verify-ticket", {
@@ -95,7 +98,7 @@ function VerifyTicketContent() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        alert(data.message || "Check-in failed.");
+        setCheckInError(data.message || "Check-in failed.");
       } else {
         setCheckInSuccess(true);
         setTicketDetails((prev) => ({
@@ -109,7 +112,7 @@ function VerifyTicketContent() {
         }));
       }
     } catch (err) {
-      alert("Check-in error: " + err.message);
+      setCheckInError("Check-in error: " + err.message);
     } finally {
       setIsCheckingIn(false);
     }
@@ -197,20 +200,39 @@ function VerifyTicketContent() {
           <div className="space-y-5 animate-in fade-in slide-in-from-bottom-6 duration-700">
             
             {/* Top Verification Status Banner */}
-            <div className="bg-emerald-500 text-white p-4 sm:p-5 rounded-3xl shadow-xl shadow-emerald-500/20 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center font-black">
-                  <CheckCircle2 size={24} />
+            {ticketDetails.canCheckIn ? (
+              <div className="bg-emerald-600 text-white p-4 sm:p-5 rounded-3xl shadow-xl shadow-emerald-500/20 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center font-black">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-base sm:text-lg leading-tight">Organizer Gate Portal</h3>
+                    <p className="text-xs text-emerald-100 font-bold">
+                      {ticketDetails.staffRole || (ticketDetails.organizerName ? `Organizer: ${ticketDetails.organizerName}` : "Authorized Event Staff")} &bull; Check-in Controls Enabled
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-black text-base sm:text-lg leading-tight">Ticket Verified Valid!</h3>
-                  <p className="text-xs text-emerald-100 font-bold">Official Event Pass Authenticated</p>
-                </div>
+                <Badge className="bg-white text-emerald-700 border-none font-black text-xs px-3 py-1 uppercase tracking-wider">
+                  {ticketDetails.staffRole || "Gate Staff"}
+                </Badge>
               </div>
-              <Badge className="bg-white text-emerald-700 border-none font-black text-xs px-3 py-1 uppercase tracking-wider">
-                {ticketDetails.registration.ticketType}
-              </Badge>
-            </div>
+            ) : (
+              <div className="bg-brand-blue text-white p-4 sm:p-5 rounded-3xl shadow-xl shadow-brand-blue/20 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center font-black">
+                    <Ticket size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-base sm:text-lg leading-tight">Attendee Verified Pass</h3>
+                    <p className="text-xs text-blue-100 font-bold">Official Digital Ticket &bull; View Only</p>
+                  </div>
+                </div>
+                <Badge className="bg-white text-brand-blue border-none font-black text-xs px-3 py-1 uppercase tracking-wider">
+                  {ticketDetails.registration.ticketType}
+                </Badge>
+              </div>
+            )}
 
             {/* Ticket Pass Container */}
             <div className="bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
@@ -297,24 +319,62 @@ function VerifyTicketContent() {
                 {/* Check-In Action Section */}
                 <div className="pt-2">
                   {ticketDetails.registration.checkedIn ? (
-                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between text-emerald-800 dark:text-emerald-300">
-                      <div className="flex items-center gap-2 font-black text-sm">
-                        <CheckCircle2 size={18} className="text-emerald-600" />
-                        <span>Checked In at Venue</span>
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-emerald-800 dark:text-emerald-300">
+                      <div className="flex items-center gap-2.5 font-black text-sm">
+                        <CheckCircle2 size={20} className="text-emerald-600 shrink-0" />
+                        <div>
+                          <span>Checked In at Venue Entrance</span>
+                          <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400 font-medium">
+                            This ticket has already been used and admitted.
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-xs font-bold opacity-80">
+                      <span className="text-xs font-mono font-bold bg-white dark:bg-emerald-900/60 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800 shrink-0">
                         {ticketDetails.registration.checkedInAt ? new Date(ticketDetails.registration.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Verified"}
                       </span>
                     </div>
+                  ) : ticketDetails.canCheckIn ? (
+                    /* Only Valid Organizer or Admin can check in */
+                    <div className="space-y-3">
+                      {checkInError && (
+                        <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-2xl text-rose-600 dark:text-rose-400 text-xs sm:text-sm font-bold flex items-center gap-2">
+                          <XCircle size={16} className="shrink-0" /> {checkInError}
+                        </div>
+                      )}
+
+                      <Button 
+                        onClick={handleCheckIn}
+                        disabled={isCheckingIn}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base h-14 rounded-2xl shadow-xl shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                      >
+                        <CheckCircle2 size={20} />
+                        {isCheckingIn ? "Validating Check-in..." : "Check In Attendee at Venue Desk"}
+                      </Button>
+                      <p className="text-[11px] text-center text-slate-400 font-bold">
+                        Organizer Gate Control: Marking check-in confirms entrance and prevents pass re-use.
+                      </p>
+                    </div>
                   ) : (
-                    <Button 
-                      onClick={handleCheckIn}
-                      disabled={isCheckingIn}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base h-14 rounded-2xl shadow-xl shadow-emerald-600/25 transition-all flex items-center justify-center gap-2"
-                    >
-                      <CheckCircle2 size={20} />
-                      {isCheckingIn ? "Validating Check-in..." : "Check In Attendee at Venue Desk"}
-                    </Button>
+                    /* Read-Only Mode for Attendees & Non-Organizers */
+                    <div className="bg-slate-100/90 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 space-y-2.5 text-center">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-black uppercase tracking-wider">
+                        <ShieldCheck size={14} /> Entry Pass Status: Valid (Not Checked In)
+                      </div>
+                      <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 leading-snug">
+                        Entrance check-in is restricted to the event organizer at the gate.
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
+                        Apna digital pass ya physical QR code entrance security / organizer ko dikhayein takay wo gate par aapka check-in verify kar sakein.
+                      </p>
+                      <div className="pt-2.5 border-t border-slate-200 dark:border-slate-700/60">
+                        <Link 
+                          href={`/auth?role=organizer&redirect=/verify-ticket?ticket=${encodeURIComponent(ticketDetails.registration.ticketCode)}`}
+                          className="text-xs font-black text-brand-blue dark:text-blue-400 hover:underline inline-flex items-center gap-1.5 transition-colors"
+                        >
+                          <Lock size={12} /> Are you the event organizer? Log in to enable gate check-in
+                        </Link>
+                      </div>
+                    </div>
                   )}
                 </div>
 

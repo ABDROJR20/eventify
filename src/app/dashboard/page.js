@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, Calendar, Ticket, Users, Plus, Activity, X, Menu, Download, CheckCircle, AlertCircle, Loader2, QrCode, DollarSign, CalendarRange, Filter } from "lucide-react";
+import { TrendingUp, Calendar, Ticket, Users, Plus, Activity, X, Menu, Download, CheckCircle, AlertCircle, Loader2, QrCode, DollarSign, CalendarRange, Filter, Share2, Sparkles, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import NotificationBell from "@/components/NotificationBell";
@@ -13,6 +14,7 @@ import NotificationBell from "@/components/NotificationBell";
 export default function Dashboard() {
   const [activeAction, setActiveAction] = useState("Start QR Check-in");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createdShareEvent, setCreatedShareEvent] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -177,6 +179,12 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.success) {
         setIsCreateModalOpen(false);
+        const createdId = data.data?.id || (data.data?._id ? String(data.data._id) : 'new');
+        setCreatedShareEvent({
+          id: createdId,
+          title: newEventForm.title,
+          url: `${window.location.origin}/events/${createdId}`
+        });
         setNewEventForm({ title: "", category: "Technology", date: "", time: "10:00 AM", location: "", price: "", description: "" });
         loadDashboardData();
       } else {
@@ -599,6 +607,60 @@ export default function Dashboard() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Event Created - Generated Shareable Link Modal */}
+      {createdShareEvent && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-300 relative border border-slate-200 dark:border-slate-800 text-center">
+            <button 
+              onClick={() => setCreatedShareEvent(null)} 
+              className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-5 text-emerald-500">
+              <Sparkles size={28} />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Event Published!</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6">
+              Shareable link generated for <span className="font-bold text-slate-900 dark:text-white">"{createdShareEvent.title}"</span>. Share this link directly with attendees:
+            </p>
+            
+            <div className="flex items-center bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-6 p-1">
+              <input 
+                type="text" 
+                readOnly 
+                value={createdShareEvent.url} 
+                className="flex-1 bg-transparent px-3 text-xs font-mono font-medium text-slate-600 dark:text-slate-300 outline-none truncate" 
+              />
+              <Button 
+                onClick={() => {
+                  navigator.clipboard.writeText(createdShareEvent.url);
+                  alert("Event link copied to clipboard! Share it with attendees.");
+                }}
+                size="sm"
+                className="bg-brand-blue hover:bg-blue-600 text-white font-bold rounded-lg text-xs h-9 px-3 cursor-pointer shrink-0"
+              >
+                Copy Link
+              </Button>
+            </div>
+
+            <div className="flex gap-3">
+              <Link href={`/events/${createdShareEvent.id}`} target="_blank" className="flex-1">
+                <Button variant="outline" className="w-full h-11 rounded-xl font-bold border-slate-200 dark:border-slate-800 cursor-pointer">
+                  Public Event View <ExternalLink size={14} className="ml-1.5" />
+                </Button>
+              </Link>
+              <Button 
+                onClick={() => setCreatedShareEvent(null)} 
+                className="flex-1 h-11 rounded-xl font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 cursor-pointer"
+              >
+                Done
+              </Button>
+            </div>
           </div>
         </div>
       )}

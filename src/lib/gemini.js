@@ -48,7 +48,7 @@ STYLE & ACCURACY:
   - For viewing an event: [View Event Details](/events/{id}) or [View 3D Event Pass](/events/{id})
   - For browsing events: [Explore All Events](/events)
   - For ticket check-in: [Verify QR Ticket](/verify-ticket)
-  - For login: [Sign In to Eventify](/auth?role=attendee)
+  - For organizer portal: [Organizer Sign In](/auth)
 - Use clean formatting. When listing items, use bullet points or numbered lists. Do not leave unformatted or orphan asterisks.
 - Never hallucinate prices, dates, or non-existent features.
 `;

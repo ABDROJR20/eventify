@@ -113,6 +113,14 @@ export default function MyEvents() {
       const data = await res.json();
       if (data.success) {
         setIsNewEventModalOpen(false);
+        const createdEventId = data.data?.id || (data.data?._id ? String(data.data._id) : 'new');
+        setActiveModal({
+          type: 'share',
+          event: {
+            id: createdEventId,
+            title: newEventForm.title,
+          }
+        });
         setNewEventForm({
           title: "",
           category: "Technology",
@@ -638,30 +646,46 @@ export default function MyEvents() {
       {/* Share Modal */}
       {activeModal && activeModal.type === 'share' && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-md transition-opacity animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl p-8 animate-in zoom-in-95 duration-300 relative border border-slate-200 dark:border-slate-800 text-center">
-            <button onClick={() => setActiveModal(null)} className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-300 relative border border-slate-200 dark:border-slate-800 text-center">
+            <button onClick={() => setActiveModal(null)} className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer">
               <X size={20} />
             </button>
-            <div className="w-16 h-16 rounded-full bg-brand-blue/10 flex items-center justify-center mx-auto mb-6 text-brand-blue">
-              <Share2 size={24} />
+            <div className="w-16 h-16 rounded-full bg-brand-blue/10 flex items-center justify-center mx-auto mb-5 text-brand-blue">
+              <Share2 size={26} />
             </div>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Share Event</h3>
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6">Share <span className="font-bold text-slate-900 dark:text-white">{activeModal.event.title}</span> with attendees.</p>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Shareable Event Link</h3>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-6">
+              Share direct registration link for <span className="font-bold text-slate-900 dark:text-white">"{activeModal.event.title}"</span> with attendees:
+            </p>
             
-            <div className="flex bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-6">
-              <input type="text" readOnly value={`${typeof window !== 'undefined' ? window.location.origin : ''}/events/${activeModal.event.id}`} className="flex-1 bg-transparent px-4 text-xs font-medium text-slate-600 dark:text-slate-300 outline-none" />
+            <div className="flex bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden mb-6 p-1">
+              <input 
+                type="text" 
+                readOnly 
+                value={`${typeof window !== 'undefined' ? window.location.origin : ''}/events/${activeModal.event.id}`} 
+                className="flex-1 bg-transparent px-3 text-xs font-mono font-medium text-slate-600 dark:text-slate-300 outline-none truncate" 
+              />
               <button 
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/events/${activeModal.event.id}`);
-                  alert("Event link copied to clipboard!");
+                  alert("Event link copied to clipboard! Share it with attendees.");
                 }}
-                className="bg-slate-200 dark:bg-slate-800 px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors"
+                className="bg-brand-blue hover:bg-blue-600 text-white px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0"
               >
-                Copy
+                Copy Link
               </button>
             </div>
 
-            <Button onClick={() => setActiveModal(null)} className="w-full h-12 rounded-xl font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900">Done</Button>
+            <div className="flex gap-3">
+              <Link href={`/events/${activeModal.event.id}`} target="_blank" className="flex-1">
+                <Button variant="outline" className="w-full h-11 rounded-xl font-bold border-slate-200 dark:border-slate-800 cursor-pointer">
+                  Public Event View
+                </Button>
+              </Link>
+              <Button onClick={() => setActiveModal(null)} className="flex-1 h-11 rounded-xl font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 cursor-pointer">
+                Done
+              </Button>
+            </div>
           </div>
         </div>
       )}

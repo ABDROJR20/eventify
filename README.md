@@ -1,4 +1,4 @@
-# 🎟️ Eventify — Smart Event Management & Ticket Booking Platform
+# 🎟️ Eventify — Smart Event Management & Digital Ticketing Platform
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.2.6-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.4-blue?style=for-the-badge&logo=react)](https://react.dev/)
@@ -8,7 +8,7 @@
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-AI_Assistant-8e75ff?style=for-the-badge&logo=google)](https://ai.google.dev/)
 [![Vercel](https://img.shields.io/badge/Deployment-Vercel-black?style=for-the-badge&logo=vercel)](https://eventify-tawny-one.vercel.app/)
 
-> **Eventify** is a modern Event Management and Digital Ticketing Platform built with **Next.js 16 (App Router)**, **MongoDB Atlas**, **Stripe**, and **Google Gemini AI**. It features interactive 3D WebGL event passes, dynamic QR code ticket validation, real-time in-app notifications, an intelligent bilingual AI assistant (English & Roman Urdu), automated Stripe Connect payout infrastructure, and role-protected organizer dashboards.
+> **Eventify** is a next-generation Event Management and Digital Ticketing Platform built with **Next.js 16 (App Router)**, **MongoDB Atlas**, **Stripe**, and **Google Gemini AI**. Designed with a seamless separation between Attendees (zero login barrier, direct event discovery, 1-click Google/Gmail registration) and Organizers (dedicated management portal, shareable event links, live analytics, and Stripe Connect payouts).
 
 🌐 **Live Website**: [https://eventify-tawny-one.vercel.app/](https://eventify-tawny-one.vercel.app/)
 
@@ -24,9 +24,9 @@
 | :---: | :---: |
 | ![Events Catalog](docs/screenshots/events-page.png) | ![Event Details](docs/screenshots/event-details.png) |
 
-| Attendee & Organizer Portal | Venue QR Check-In Scanner |
+| Dedicated Organizer Dashboard | Venue QR Check-In Scanner |
 | :---: | :---: |
-| ![Attendee Portal](docs/screenshots/attendee-portal.png) | ![QR Verification Scanner](docs/screenshots/qr-verification.png) |
+| ![Organizer Dashboard](docs/screenshots/attendee-portal.png) | ![QR Verification Scanner](docs/screenshots/qr-verification.png) |
 
 <details>
 <summary><b>🔍 View Full Landing Page Preview</b></summary>
@@ -39,54 +39,77 @@
 
 ---
 
-## 🌟 Key Features
+## 🚀 Two Distinct User Journeys
+
+```mermaid
+flowchart TD
+    Visitor[Visitor lands on Eventify] --> RoleModal{Select Role Modal}
+    
+    %% Attendee Journey
+    RoleModal -- "I am an Attendee" --> EventsPage["Browse Events Catalog (/events)"]
+    EventsPage --> EventDetail["Select Specific Event (/events/:id)"]
+    EventDetail --> RegModal{"Register / Checkout"}
+    RegModal -- 1-Click --> GoogleAuth["Google One-Tap / OAuth"]
+    RegModal -- Direct Entry --> ValidEmail["Valid Gmail / Email Verification"]
+    GoogleAuth --> TicketGen["Dynamic QR Code Ticket Generated"]
+    ValidEmail --> TicketGen
+    TicketGen --> EmailDispatch["Instant Email Delivery + 3D Pass"]
+    
+    %% Organizer Journey
+    RoleModal -- "I am an Organizer" --> AuthPage["Dedicated Organizer Auth (/auth)"]
+    AuthPage --> OrgDashboard["Organizer Dashboard (/dashboard)"]
+    OrgDashboard --> CreateEvent["Create New Event"]
+    CreateEvent --> AutoLink["Auto-Generated Shareable Link (/events/:id)"]
+    AutoLink --> ShareAudience["Share on WhatsApp / Social Media / Email"]
+    OrgDashboard --> ManageTools["Stripe Payouts | Analytics | Team Roles | Broadcast"]
+```
+
+### 1. 🎟️ For Attendees: Zero Login Barrier & Instant Access
+- **No Mandatory Account Creation**: Attendees do not need to register an account or remember passwords to explore public events.
+- **Direct Event Exploration (`/events`)**: Instant access to the public event catalog, category filters, and live search.
+- **Flexible Event Registration**:
+  - **1-Click Google Sign-In**: Quick authentication without filling tedious forms.
+  - **Manual Email Entry**: Accepts any valid Gmail/email address with strict regex validation (`/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/`).
+- **Instant QR Pass**: Dynamic encrypted QR pass generated on the confirmation screen and delivered directly to the attendee's inbox via Nodemailer.
+- **Interactive 3D Ticket Pass**: Three.js WebGL holographic pass with orbital rotation.
+
+### 2. ⚡ For Organizers: Powerful Management & Automated Link Sharing
+- **Dedicated Organizer Portal (`/auth`)**: Clean, exclusive organizer authentication (email/password and Google OAuth). Attendee login prompts are completely removed to prevent confusion.
+- **Auto-Generated Shareable Event Links**: When an organizer publishes an event in `/dashboard`, the system immediately generates a unique shareable link (`https://eventify.app/events/[id]`) with a 1-click copy link modal.
+- **Real-Time Revenue & Attendance Analytics**: Visual charts for ticket sales, revenue growth, and check-in rates.
+- **Stripe Connect Automated Payouts**: Connect bank accounts and receive automated multi-currency ticket payouts (`PKR`, `USD`, `EUR`, `GBP`).
+- **Team Roles & Scanner Delegation**: Assign staff scanner permissions to team members via `/dashboard/roles` and `/verify-ticket`.
+- **Broadcast Messaging**: Send bulk update emails to all registered event attendees in one click.
+
+---
+
+## 🌟 Key Platform Features
 
 ### 1. 🤖 Intelligent Bilingual AI Assistant (Google Gemini)
-- **Natural Language in English & Roman Urdu**: Converses fluently in both English and Roman Urdu (e.g., *"Event ki price kya hai?", "Ticket kaise verify hogi?"*).
-- **Live Event Search & Discovery**: Queries the database in real time for upcoming workshops, summits, dates, venues, and ticket tier pricing.
-- **Direct Navigation Links**: Provides action buttons and links that take users directly to event booking pages or prompt sign-in if needed.
-- **Clean Markdown Formatting**: Clean, professional responses free from raw syntax glitches.
+- **Fluent in English & Roman Urdu**: Understands and replies naturally in English and Roman Urdu (e.g., *"Event ki ticket price kya hai?", "Ticket kaise verify hogi?"*).
+- **Live Database Search**: Real-time queries for upcoming events, dates, venues, categories, and ticket tier pricing.
+- **Context-Aware Navigation**: Guides users with direct action links to event pages and ticket scanners without forcing attendee logins.
 
-### 2. 🔔 Real-Time In-App Notification Bell System
-- **Live Notification Center**: Interactive notification bell integrated across the Organizer Dashboard, Events Catalog, and Attendee Portal.
+### 2. 🛡️ Public Venue QR Check-In Scanner (`/verify-ticket`)
+- **Sub-Second Ticket Verification**: Camera QR code scanning or manual code lookup (`EVT-XXXXX`).
+- **Anti-Fraud & Duplicate Prevention**: Instantly flags already checked-in tickets and invalid codes.
+- **Live Audio & Haptic Feedback**: Positive check-in chimes and alert sounds for staff verification desks.
+
+### 3. 🔔 Real-Time In-App Notification Center
+- **Interactive Notification Bell**: Integrated across the Organizer Dashboard, Events Catalog, and Navigation Bars.
 - **Instant Alerts**:
-  - **Ticket Purchases**: Emits real-time alerts to the attendee (*"Ticket Confirmed! Pass EVT-XXXXX is ready"*) and the organizer (*"New Ticket Sale! [Name] bought a pass"*).
-  - **Venue Check-In**: Alerts the organizer upon badge verification and welcomes the attendee upon entry.
-- **Live Polling & Badge Counter**: Unread counter badge, pulse animations, filter tabs ("All" / "Unread"), and individual "Mark as Read" actions.
+  - **Ticket Sales**: Emits real-time alerts to the organizer (*"New Ticket Sale! [Name] bought a pass"*).
+  - **Check-In Confirmations**: Live entrance alerts for checked-in attendees.
+- **Unread Badge & Filters**: Live polling counter badge, pulse animations, filter tabs ("All" / "Unread"), and individual "Mark as Read" actions.
 
-### 3. ⚙️ Comprehensive Organizer Settings & Stripe Connect
-- **Profile Customization**: Live avatar photo upload and preview, organizer/company name, email, bio, and social media links.
-- **Stripe Connect Payouts**:
-  - Live Stripe account connection status (`Connected` badge & Account ID).
-  - Payout currency selection (`PKR`, `USD`, `EUR`, `GBP`).
-  - Instant Payouts toggle switch and linked bank account management (IBAN / routing).
-- **Notification Preferences**: Granular switches for ticket sales alerts, daily digest summaries, marketing emails, and audio chimes.
-- **Security & Authentication**:
-  - **Master Password Change**: Secure current password validation with `bcrypt` encryption.
-  - **Google OAuth Compatibility**: Intelligently detects accounts registered via Google and allows setting a local password directly without requiring an existing password.
-  - **Two-Factor Authentication (2FA)**: Toggleable extra layer of defense with email OTP verification.
+### 4. 💳 Multi-Currency Stripe Checkout & Gateways
+- **Stripe Hosted Checkout**: Secure credit/debit card processing with dynamic currency conversion (PKR, USD, EUR, GBP, AED, SAR).
+- **Asynchronous Webhooks (`/api/webhooks/stripe`)**: Automated order fulfillment, ticket generation, and real-time inventory deduction upon successful payment.
 
-### 4. 🎫 Interactive 3D Passes & Dynamic QR Ticketing
-- **Three.js WebGL 3D Pass**: Interactive pass card featuring 360° orbital rotation, stage lighting effects, and holographic badge seals.
-- **Dynamic Scannable QR Codes**: Every purchased ticket generates an encrypted ticket code (`EVT-XXXXX`).
-- **Venue Check-in Desk (`/verify-ticket`)**: Sub-second attendee validation using camera QR scanning or manual code search with duplicate check-in prevention.
-- **Automated Email Delivery**: Instant confirmation emails with scannable QR ticket attachments dispatched via Nodemailer.
-
-### 5. 🔐 Strict Role-Based Authentication & Protected Routes
-- **Attendee vs. Organizer Separation**: Distinct authentication flows preventing attendees from accessing organizer panels and vice-versa.
-- **JWT & HTTP-Only Cookies**: Secure session token storage protected against client-side script tampering.
-- **Google OAuth 2.0 Integration**: Fast single-click Google authentication with automated account creation.
-- **OTP Password Recovery**: 6-digit email verification flow for secure password resets.
-
-### 6. 💳 Multi-Currency Stripe Checkout & Payment Gateways
-- **Stripe Hosted Checkout**: Secure credit/debit card processing with automatic exchange rate conversion.
-- **Multi-Currency Support**: Dynamic price display across PKR, USD, EUR, GBP, AED, and SAR.
-- **Automated Webhooks**: Stripe webhook listener (`/api/webhooks/stripe`) for instant order fulfillment and inventory adjustment.
-
-### 7. 🌟 Real Platform Metrics & Live Community Reviews
-- **Real Database-Driven Metrics**: Replaced static/fake stats. Landing page metrics (Total Events, Passes Booked, Average Community Rating, and Verification Accuracy) are computed dynamically from MongoDB and real database state.
-- **Live Community Reviews Engine**: Real feedback fetched dynamically via `/api/reviews` with 1-5 star ratings, verified attendee badges, event tags, and reviewer avatars.
-- **Interactive "Write a Review" Modal**: Attendees and creators can submit their genuine ratings and feedback directly through an interactive modal with instant live updates.
+### 5. 🌟 Real Platform Metrics & Live Community Reviews
+- **Database-Driven Statistics**: Landing page metrics (Total Events, Passes Booked, Average Community Rating) calculated dynamically from MongoDB.
+- **Live Community Reviews Engine**: Real feedback fetched via `/api/reviews` with 1-5 star ratings, verified attendee badges, event tags, and reviewer avatars.
+- **Interactive "Write a Review" Modal**: Attendees and creators can submit ratings and feedback with real-time UI updates.
 
 ---
 
@@ -94,15 +117,15 @@
 
 | Layer | Technology | Details |
 | :--- | :--- | :--- |
-| **Frontend Framework** | **Next.js 16.2 (App Router)** | React 19, Server & Client Components, Turbopack |
+| **Frontend Framework** | **Next.js 16.2.6 (App Router)** | React 19, Server & Client Components, Turbopack |
 | **Styling & Design** | **Tailwind CSS v4** | CSS Variables, Dark/Light Mode with `next-themes`, Glassmorphism |
-| **3D & Animations** | **Three.js & Lucide Icons** | Interactive 3D WebGL scene canvas, Framer Motion, GSAP |
-| **Database** | **MongoDB Atlas** | Official `mongodb` & `mongoose` drivers with serverless connection caching |
-| **Payment Gateway** | **Stripe API** | Hosted Checkout Sessions, Webhooks, Stripe Connect Payouts |
-| **Artificial Intelligence**| **Google Gemini AI** | Official `@google/genai` SDK, Function Calling, System Prompts |
-| **Email Service** | **Nodemailer** | Gmail SMTP transport with HTML templates and QR ticket delivery |
-| **Authentication** | **Custom JWT + Google OAuth** | BcryptJS password hashing, HTTP-Only cookies, Google Identity |
-| **Deployment** | **Vercel** | Edge network, Serverless API functions |
+| **3D & Visuals** | **Three.js & Lucide Icons** | Interactive 3D WebGL scene canvas, OrbitControls, GSAP |
+| **Database** | **MongoDB Atlas** | Official `mongodb` & `mongoose` drivers with connection pooling |
+| **Payment Gateway** | **Stripe API & Stripe Connect** | Hosted Checkout Sessions, Webhooks, Multi-Currency Payouts |
+| **Artificial Intelligence**| **Google Gemini AI** | Official `@google/genai` SDK, Function Calling, Bilingual Prompting |
+| **Email Service** | **Nodemailer** | Gmail SMTP transport with HTML ticket templates & scannable QR passes |
+| **Authentication** | **Custom JWT + Google Identity (GIS)** | Bcrypt password hashing, HTTP-Only cookies, Google One-Tap |
+| **Deployment** | **Vercel** | Edge Network, Serverless Route Handlers |
 
 ---
 
@@ -111,58 +134,61 @@
 ```text
 eventify/
 ├── docs/
-│   └── screenshots/        # UI preview images for documentation
-├── public/                 # Static assets, logos, and illustrations
+│   └── screenshots/          # UI preview images for documentation
+├── public/                   # Static assets, logos, and illustrations
 ├── src/
-│   ├── app/                # Next.js App Router
-│   │   ├── admin/          # Admin management (users, roles, analytics, alerts)
-│   │   ├── api/            # Serverless backend API endpoints
-│   │   │   ├── auth/       # Login, register, Google OAuth, OTP verification
-│   │   │   ├── chat/       # Gemini AI chatbot endpoint (bilingual search)
-│   │   │   ├── events/     # Events CRUD, checkout sessions, ticket dispatch
-│   │   │   ├── notifications/ # Real-time notification fetch, read, & delete
-│   │   │   ├── organizer/  # Dashboard metrics, settings, broadcast, attendees
-│   │   │   ├── reviews/    # Live community reviews & platform metrics endpoint
-│   │   │   ├── stripe/     # Stripe checkout sessions & verification
+│   ├── app/                  # Next.js App Router
+│   │   ├── admin/            # Platform administration (users, roles, metrics)
+│   │   ├── api/              # Serverless backend API routes
+│   │   │   ├── auth/         # Login, register, Google OAuth, OTP verification
+│   │   │   ├── chat/         # Gemini AI chatbot endpoint (bilingual search)
+│   │   │   ├── events/       # Events CRUD, checkout sessions, ticket dispatch
+│   │   │   ├── notifications/ # Real-time notification fetch & status update
+│   │   │   ├── organizer/    # Dashboard metrics, settings, broadcast, attendees
+│   │   │   ├── reviews/      # Live community reviews & platform metrics
+│   │   │   ├── stripe/       # Stripe checkout sessions & verification
 │   │   │   ├── verify-ticket/ # QR ticket scanner & entrance check-in
-│   │   │   └── webhooks/   # Stripe asynchronous payment webhook handler
-│   │   ├── auth/           # Login, signup, & password reset flows
-│   │   ├── dashboard/      # Organizer management dashboard & settings
-│   │   │   ├── analytics/  # Revenue and attendance analytics
-│   │   │   ├── attendees/  # Registered attendee guestlist
-│   │   │   ├── events/     # Event creation and management
+│   │   │   └── webhooks/     # Stripe asynchronous payment webhook handler
+│   │   ├── auth/             # Dedicated Organizer Login & Registration
+│   │   ├── dashboard/        # Organizer management dashboard & analytics
+│   │   │   ├── analytics/    # Revenue and attendance analytics
+│   │   │   ├── attendees/    # Registered attendee guestlist & export
+│   │   │   ├── events/       # Event creation with auto-link generator modal
 │   │   │   ├── registrations/ # Order tracking & CSV export
-│   │   │   ├── settings/   # Profile, Stripe payout, notifications, 2FA
-│   │   │   └── layout.js   # Organizer role protection guard
-│   │   ├── events/         # Discover events catalog & ticket booking [id]
-│   │   ├── portal/         # Role selection portal (Attendee / Organizer)
-│   │   ├── verify-ticket/  # Public QR pass entrance scanner
-│   │   ├── layout.js       # Global layout with theme provider & chatbot
-│   │   └── page.js         # Landing page with 3D pass hero & featured events
-│   ├── components/         # Reusable UI components
-│   │   ├── ui/             # Buttons, inputs, badges, cards, tables
-│   │   ├── Chatbot.js      # Gemini AI assistant widget
+│   │   │   ├── roles/        # Staff scanner permissions & team delegation
+│   │   │   ├── settings/     # Profile, Stripe Connect payout, 2FA, notifications
+│   │   │   └── layout.js     # Organizer role protection guard
+│   │   ├── events/           # Public Discover events catalog
+│   │   │   └── [id]/         # Specific event details, 3D pass, Google/Email booking
+│   │   ├── portal/           # Operational Portal (Dashboard & Ticket Scanner)
+│   │   ├── verify-ticket/    # Public QR pass entrance scanner desk
+│   │   ├── layout.js         # Global layout with theme provider & chatbot
+│   │   ├── page.js           # Landing page with role selector modal & 3D pass hero
+│   │   └── proxy.js          # Next.js middleware & route protection
+│   ├── components/           # Reusable UI components
+│   │   ├── ui/               # Buttons, inputs, dialogs, badges, cards
+│   │   ├── Chatbot.js        # Gemini AI assistant widget
 │   │   ├── Eventify3DScene.jsx # Three.js interactive 3D event pass
 │   │   ├── NotificationBell.js # Live notification dropdown & polling badge
-│   │   ├── Sidebar.js      # Organizer navigation sidebar
-│   │   └── theme-toggle.js # Dark/Light theme switcher
-│   └── lib/                # Core utilities and backend libraries
-│       ├── auth.js         # JWT creation, verification, cookie helpers
-│       ├── currencies.js   # Live currency rates & formatting
-│       ├── db.js           # Database CRUD abstraction & persistent storage
-│       ├── email.js        # Nodemailer ticket email & OTP dispatcher
-│       ├── gemini.js       # Google Gemini client configuration
-│       ├── mongodb.js      # MongoDB Atlas client singleton
-│       └── stripe.js       # Stripe SDK client initialization
-├── package.json            # Project dependencies and scripts
-└── tailwind.config.js      # Tailwind styling configuration
+│   │   ├── Sidebar.js        # Organizer navigation sidebar
+│   │   └── theme-toggle.js   # Dark/Light theme switcher
+│   └── lib/                  # Core utilities and backend libraries
+│       ├── auth.js           # JWT creation, verification, cookie helpers
+│       ├── currencies.js     # Live currency exchange rates & formatting
+│       ├── db.js             # Database CRUD abstraction & persistent storage
+│       ├── email.js          # Nodemailer ticket email & OTP dispatcher
+│       ├── gemini.js         # Google Gemini client configuration
+│       ├── mongodb.js        # MongoDB Atlas client singleton
+│       └── stripe.js         # Stripe SDK client initialization
+├── package.json              # Project dependencies and scripts
+└── tailwind.config.js        # Tailwind styling configuration
 ```
 
 ---
 
 ## ⚙️ Environment Configuration
 
-Create a `.env` or `.env.local` file in the root directory and add the following keys:
+Create a `.env` or `.env.local` file in the root directory:
 
 ```env
 # Application URL
@@ -175,7 +201,7 @@ MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.fbjmeqo.mongodb.net/eve
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASSWORD=your_gmail_app_password
 
-# Google OAuth 2.0 Credentials
+# Google OAuth 2.0 Credentials (GIS)
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 
 # Stripe Payment Gateway & Connect
@@ -191,7 +217,7 @@ JWT_SECRET=your_super_secret_jwt_key
 ```
 
 > [!NOTE]
-> For Gmail SMTP, generate an **App Password** from your Google Account settings (Security → 2-Step Verification → App Passwords).
+> For Gmail SMTP, generate an **App Password** from your Google Account settings (*Security → 2-Step Verification → App Passwords*).
 
 ---
 
@@ -216,7 +242,6 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### 4. Build for Production
-To test the production bundle locally:
 ```bash
 npm run build
 npm run start
@@ -228,40 +253,30 @@ npm run start
 
 ```mermaid
 graph TD
-    A[Attendee buys Ticket on Eventify] --> B[Payment verified via Stripe / Wallet]
-    B --> C[Success Page displays 3D Pass & Dynamic QR]
-    B --> D[Email sent to Attendee with QR Ticket]
-    B --> N1[In-App Notification: Attendee & Organizer]
-    C --> E[Attendee brings QR Pass to Venue]
-    D --> E
-    E --> F[Venue Staff scans QR Code with Phone Camera]
-    F --> G[Opens /verify-ticket?ticket=EVT-XXXXX]
-    G --> H[System verifies Ticket in MongoDB Database]
-    H --> I{Is Ticket Valid & Not Checked In?}
-    I -- Yes --> J[Confirms Check-In & Emits Live Notification]
-    I -- Already Checked In --> K[Alerts Staff: Duplicate Scan]
-    I -- Invalid Code --> L[Denies Access: Invalid Pass]
+    A[Attendee selects Pass on /events/:id] --> B[Registers via Google or Valid Email]
+    B --> C[Payment verified via Stripe / Free Registration]
+    C --> D[Confirmation Page displays 3D Pass & Dynamic QR]
+    C --> E[Instant Email sent to Attendee with QR Ticket]
+    C --> N1[In-App Notification to Organizer: New Ticket Sale]
+    D --> F[Attendee brings QR Pass to Venue]
+    E --> F
+    F --> G[Venue Staff scans QR Code with Phone Camera]
+    G --> H[Opens /verify-ticket?ticket=EVT-XXXXX]
+    H --> I[System verifies Ticket in MongoDB Database]
+    I --> J{Is Ticket Valid & Not Checked In?}
+    J -- Yes --> K[Confirms Check-In & Emits Live Notification]
+    J -- Already Checked In --> L[Alerts Staff: Duplicate Scan Detected]
+    J -- Invalid Code --> M[Denies Access: Invalid Pass]
 ```
 
 ---
 
 ## 🌐 Deploying to Vercel
 
-1. Push your repository to **GitHub**.
-2. Go to [Vercel Dashboard](https://vercel.com/) and click **Add New Project** → Import `eventify`.
-3. In **Settings → Environment Variables**, add the environment variables listed in the configuration section.
+1. Push your changes to **GitHub**.
+2. Go to the [Vercel Dashboard](https://vercel.com/) and import `eventify`.
+3. In **Settings → Environment Variables**, add the environment variables defined above.
 4. Click **Deploy**. Vercel will automatically build and publish your project!
-
----
-
-## 🤝 Contributing
-
-Contributions, bug reports, and feature suggestions are welcome!
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ---
 

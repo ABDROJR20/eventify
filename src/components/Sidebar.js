@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Home, Calendar, Ticket, Users, TrendingUp, Settings, X, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Home, Calendar, Ticket, Users, TrendingUp, Settings, X, LogOut, User, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -81,6 +81,7 @@ export default function Sidebar({ activePage, isOpen, onClose }) {
           <NavItem icon={<Calendar size={20} />} label="My Events" active={activePage === "events"} href="/dashboard/events" onClick={onClose} />
           <NavItem icon={<Ticket size={20} />} label="Registrations" active={activePage === "registrations"} href="/dashboard/registrations" onClick={onClose} />
           <NavItem icon={<Users size={20} />} label="Attendees" active={activePage === "attendees"} href="/dashboard/attendees" onClick={onClose} />
+          <NavItem icon={<ShieldCheck size={20} />} label="Team & Roles" active={activePage === "roles"} href="/dashboard/roles" onClick={onClose} />
           <NavItem icon={<TrendingUp size={20} />} label="Analytics" active={activePage === "analytics"} href="/dashboard/analytics" onClick={onClose} />
           <NavItem icon={<Settings size={20} />} label="Settings" active={activePage === "settings"} href="/dashboard/settings" onClick={onClose} />
         </nav>

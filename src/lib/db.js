@@ -24,6 +24,7 @@ const ACTIVITIES_FILE = path.join(DATA_DIR, "activities.json");
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
 const NOTIFICATIONS_FILE = path.join(DATA_DIR, "notifications.json");
 const REVIEWS_FILE = path.join(DATA_DIR, "reviews.json");
+const TEAM_ROLES_FILE = path.join(DATA_DIR, "team_roles.json");
 
 // In-Memory Global Fallback Cache for Serverless Lambdas
 if (!globalThis.__eventify_users) globalThis.__eventify_users = null;
@@ -35,6 +36,7 @@ if (!globalThis.__eventify_activities) globalThis.__eventify_activities = null;
 if (!globalThis.__eventify_settings) globalThis.__eventify_settings = null;
 if (!globalThis.__eventify_notifications) globalThis.__eventify_notifications = null;
 if (!globalThis.__eventify_reviews) globalThis.__eventify_reviews = null;
+if (!globalThis.__eventify_team_roles) globalThis.__eventify_team_roles = null;
 
 // Initial Seed Data
 const SEED_EVENTS = [
@@ -328,6 +330,31 @@ const SEED_REVIEWS = [
   }
 ];
 
+const SEED_TEAM_ROLES = [
+  {
+    id: "role_seed_1",
+    name: "Gate Scanner Staff",
+    email: "scanner@eventify.pk",
+    eventId: "evt_1",
+    eventTitle: "Global Tech Summit 2026",
+    roleTitle: "Gate Scanner & Check-in",
+    permissions: {
+      canCheckIn: true,
+      canViewAttendees: true,
+      canEditEvent: false,
+      canSendBroadcast: false,
+      canViewRevenue: false,
+    },
+    status: "Active",
+    invitedBy: "usr_1791805734421_mwzyzz5",
+    invitedByEmail: "hafizabdullah.munawar786@gmail.com",
+    invitedByName: "Abdullah Munawar",
+    inviteToken: "inv_seed_token_1",
+    createdAt: "2026-04-01T10:00:00.000Z",
+    updatedAt: "2026-04-01T10:00:00.000Z",
+  }
+];
+
 // Ensure directory and files exist with seed data migration
 async function ensureFiles() {
   try {
@@ -413,6 +440,14 @@ async function ensureFiles() {
       await fs.writeFile(REVIEWS_FILE, JSON.stringify(SEED_REVIEWS, null, 2), "utf8");
       globalThis.__eventify_reviews = SEED_REVIEWS;
     }
+
+    // Check/seed team_roles.json
+    try {
+      await fs.access(TEAM_ROLES_FILE);
+    } catch {
+      await fs.writeFile(TEAM_ROLES_FILE, JSON.stringify(SEED_TEAM_ROLES, null, 2), "utf8");
+      globalThis.__eventify_team_roles = SEED_TEAM_ROLES;
+    }
   } catch (error) {
     console.warn("Storage warning (falling back to memory):", error.message);
     if (!globalThis.__eventify_users) globalThis.__eventify_users = [];
@@ -423,6 +458,7 @@ async function ensureFiles() {
     if (!globalThis.__eventify_settings) globalThis.__eventify_settings = SEED_SETTINGS;
     if (!globalThis.__eventify_notifications) globalThis.__eventify_notifications = SEED_NOTIFICATIONS;
     if (!globalThis.__eventify_reviews) globalThis.__eventify_reviews = SEED_REVIEWS;
+    if (!globalThis.__eventify_team_roles) globalThis.__eventify_team_roles = SEED_TEAM_ROLES;
   }
 }
 
@@ -736,12 +772,13 @@ export async function createEvent(eventData) {
     attendeesCount: 0,
     capacity: Number(eventData.capacity) || 100,
     status: eventData.status || "Draft",
-    featured: Boolean(eventData.featured),
     ticketsSold: 0,
     revenue: 0,
     description: eventData.description || "",
     speakers: Array.isArray(eventData.speakers) ? eventData.speakers : (eventData.speakers ? [eventData.speakers] : []),
     organizerId: eventData.organizerId || "org_default",
+    organizerEmail: eventData.organizerEmail || null,
+    organizerName: eventData.organizerName || null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -1527,3 +1564,149 @@ export async function getPlatformStats() {
     totalReviews: reviews.length,
   };
 }
+
+// ==========================================
+// TEAM ROLES & EVENT STAFF HELPERS
+// ==========================================
+
+export async function getAllTeamRoles() {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const roles = await db.collection("team_roles").find({}).sort({ createdAt: -1 }).toArray();
+      if (roles && roles.length > 0) {
+        return roles.map(({ _id, ...r }) => r);
+      }
+    }
+  } catch (e) {
+    console.warn("MongoDB getAllTeamRoles error:", e.message);
+  }
+
+  await ensureFiles();
+  try {
+    const data = await fs.readFile(TEAM_ROLES_FILE, "utf8");
+    return JSON.parse(data);
+  } catch {
+    return globalThis.__eventify_team_roles || SEED_TEAM_ROLES;
+  }
+}
+
+export async function createTeamRole(roleData) {
+  const newRole = {
+    id: "role_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+    name: roleData.name?.trim() || "Team Member",
+    email: roleData.email.trim().toLowerCase(),
+    eventId: roleData.eventId,
+    eventTitle: roleData.eventTitle || "Assigned Event",
+    roleTitle: roleData.roleTitle || "Event Moderator",
+    permissions: {
+      canCheckIn: Boolean(roleData.permissions?.canCheckIn),
+      canViewAttendees: Boolean(roleData.permissions?.canViewAttendees),
+      canEditEvent: Boolean(roleData.permissions?.canEditEvent),
+      canSendBroadcast: Boolean(roleData.permissions?.canSendBroadcast),
+      canViewRevenue: Boolean(roleData.permissions?.canViewRevenue),
+    },
+    status: roleData.status || "Invited",
+    invitedBy: roleData.invitedBy || "organizer",
+    invitedByEmail: roleData.invitedByEmail || "",
+    invitedByName: roleData.invitedByName || "Event Organizer",
+    inviteToken: "inv_" + Date.now() + "_" + Math.random().toString(36).substring(2, 9),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("team_roles").insertOne({ ...newRole });
+    }
+  } catch (e) {
+    console.warn("MongoDB createTeamRole error:", e.message);
+  }
+
+  await ensureFiles();
+  const current = await getAllTeamRoles();
+  const updated = [newRole, ...current];
+  globalThis.__eventify_team_roles = updated;
+
+  try {
+    await fs.writeFile(TEAM_ROLES_FILE, JSON.stringify(updated, null, 2), "utf8");
+  } catch (err) {
+    console.warn("Could not save team role to file:", err.message);
+  }
+
+  return newRole;
+}
+
+export async function updateTeamRole(id, updates) {
+  const roles = await getAllTeamRoles();
+  const idx = roles.findIndex((r) => r.id === id);
+  if (idx === -1) return null;
+
+  roles[idx] = {
+    ...roles[idx],
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("team_roles").updateOne({ id }, { $set: roles[idx] });
+    }
+  } catch (e) {
+    console.warn("MongoDB updateTeamRole error:", e.message);
+  }
+
+  globalThis.__eventify_team_roles = roles;
+  try {
+    await fs.writeFile(TEAM_ROLES_FILE, JSON.stringify(roles, null, 2), "utf8");
+  } catch (err) {
+    console.warn("Could not update team role file:", err.message);
+  }
+
+  return roles[idx];
+}
+
+export async function deleteTeamRole(id) {
+  const roles = await getAllTeamRoles();
+  const filtered = roles.filter((r) => r.id !== id);
+
+  try {
+    const db = await getDatabase();
+    if (db) {
+      await db.collection("team_roles").deleteOne({ id });
+    }
+  } catch (e) {
+    console.warn("MongoDB deleteTeamRole error:", e.message);
+  }
+
+  globalThis.__eventify_team_roles = filtered;
+  try {
+    await fs.writeFile(TEAM_ROLES_FILE, JSON.stringify(filtered, null, 2), "utf8");
+  } catch (err) {
+    console.warn("Could not delete team role file:", err.message);
+  }
+
+  return true;
+}
+
+export async function findTeamRolesByUserEmail(email) {
+  if (!email) return [];
+  const normalized = email.toLowerCase().trim();
+  const roles = await getAllTeamRoles();
+  return roles.filter((r) => r.email.toLowerCase() === normalized && r.status !== "Revoked");
+}
+
+export async function findTeamRoleForEventAndUser(eventId, userEmail) {
+  if (!eventId || !userEmail) return null;
+  const normalizedEmail = userEmail.toLowerCase().trim();
+  const roles = await getAllTeamRoles();
+  return roles.find(
+    (r) =>
+      r.email.toLowerCase() === normalizedEmail &&
+      (String(r.eventId) === String(eventId) || r.eventId === "all") &&
+      r.status !== "Revoked"
+  ) || null;
+}
+

@@ -472,3 +472,175 @@ export async function sendTicketEmail({
   }
 }
 
+/**
+ * Send an official team invitation email with specific role and assigned authorities
+ */
+export async function sendTeamInviteEmail({
+  toEmail,
+  inviteeName = "Team Member",
+  organizerName = "Event Organizer",
+  eventTitle = "Event",
+  roleTitle = "Event Moderator",
+  permissions = {},
+  inviteUrl = "https://eventify-tawny-one.vercel.app/auth",
+}) {
+  const transporter = getTransporter();
+
+  // Format list of assigned authorities
+  const authoritiesList = [];
+  if (permissions.canCheckIn) authoritiesList.push("Entrance QR Ticket Check-in (Gate Scanner Desk)");
+  if (permissions.canViewAttendees) authoritiesList.push("Access Guestlist & Attendee Information");
+  if (permissions.canEditEvent) authoritiesList.push("Edit Event Schedule & Logistics");
+  if (permissions.canSendBroadcast) authoritiesList.push("Send Announcements & Broadcast Notifications");
+  if (permissions.canViewRevenue) authoritiesList.push("View Ticket Sales & Revenue Analytics");
+
+  const authoritiesHtml = authoritiesList.length > 0
+    ? authoritiesList.map(auth => `
+        <li style="margin-bottom: 8px; color: #e2e8f0; font-size: 14px; font-weight: 600;">
+          <span style="color: #10b981; font-weight: bold; margin-right: 6px;">✓</span> ${auth}
+        </li>
+      `).join("")
+    : `<li style="color: #94a3b8; font-size: 13px;">View-only event member access</li>`;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Event Team Invitation - Eventify</title>
+      <style>
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+          background-color: #0b0f19;
+          color: #ffffff;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 560px;
+          margin: 40px auto;
+          background: #111827;
+          border: 1px solid #1f2937;
+          border-radius: 24px;
+          overflow: hidden;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .header {
+          background: linear-gradient(135deg, #0284c7, #2563eb);
+          padding: 36px 32px;
+          text-align: center;
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 28px;
+          font-weight: 900;
+          letter-spacing: -0.5px;
+          color: #ffffff;
+        }
+        .content {
+          padding: 36px 32px;
+        }
+        .role-box {
+          background: #1e293b;
+          border: 1px solid #334155;
+          border-radius: 16px;
+          padding: 20px;
+          margin: 24px 0;
+        }
+        .role-title {
+          font-size: 18px;
+          font-weight: 800;
+          color: #38bdf8;
+          margin: 0 0 4px 0;
+        }
+        .event-name {
+          font-size: 14px;
+          color: #94a3b8;
+          font-weight: 600;
+        }
+        .btn {
+          display: block;
+          width: 100%;
+          text-align: center;
+          background: #2563eb;
+          color: #ffffff !important;
+          padding: 16px 24px;
+          border-radius: 14px;
+          font-weight: 800;
+          font-size: 16px;
+          text-decoration: none;
+          box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.4);
+          box-sizing: border-box;
+          margin-top: 28px;
+        }
+        .footer {
+          padding: 20px 32px;
+          background: #0b0f19;
+          border-top: 1px solid #1f2937;
+          text-align: center;
+          font-size: 12px;
+          color: #64748b;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Eventify</h1>
+          <p style="margin: 8px 0 0; color: #e0f2fe; font-size: 15px; font-weight: 600;">Event Team Invitation</p>
+        </div>
+        <div class="content">
+          <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0; margin-top: 0;">
+            Hi <strong>${inviteeName}</strong>,
+          </p>
+          <p style="font-size: 15px; line-height: 1.6; color: #94a3b8;">
+            <strong>${organizerName}</strong> has invited you to join their event management team on Eventify.
+          </p>
+
+          <div class="role-box">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; font-weight: 800; margin-bottom: 6px;">Assigned Position</div>
+            <div class="role-title">${roleTitle}</div>
+            <div class="event-name">Event: ${eventTitle}</div>
+          </div>
+
+          <div style="margin: 20px 0;">
+            <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 12px;">
+              Your Designated Authorities:
+            </div>
+            <ul style="padding-left: 20px; margin: 0; list-style-type: none;">
+              ${authoritiesHtml}
+            </ul>
+          </div>
+
+          <p style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin-top: 24px;">
+            Note: Your access is limited strictly to the authorities granted above by the event organizer.
+          </p>
+
+          <a href="${inviteUrl}" class="btn">
+            Accept & Access Event Portal →
+          </a>
+        </div>
+        <div class="footer">
+          Eventify Team Permissions &bull; Sent on behalf of ${organizerName}.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"${organizerName} via Eventify" <${process.env.EMAIL_USER || "hafizabdullah.munawar786@gmail.com"}>`,
+      to: toEmail,
+      subject: `🎯 Team Invitation: ${roleTitle} for "${eventTitle}"`,
+      html: htmlContent,
+    });
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error("Error sending team invite email:", error);
+    return { success: true, simulated: true, note: error.message };
+  }
+}
+
+

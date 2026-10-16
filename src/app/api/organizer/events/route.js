@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAllEvents, createEvent } from "@/lib/db";
+import { getSessionUser } from "@/lib/auth";
 
 export async function GET(request) {
   try {
@@ -70,6 +71,7 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    const sessionUser = await getSessionUser();
     const body = await request.json();
 
     if (!body.title) {
@@ -92,7 +94,9 @@ export async function POST(request) {
       featured: body.featured || false,
       description: body.description || "",
       speakers: body.speakers || [],
-      organizerId: body.organizerId || "org_default",
+      organizerId: sessionUser?.id || body.organizerId || "org_default",
+      organizerEmail: sessionUser?.email || body.organizerEmail || null,
+      organizerName: sessionUser?.name || body.organizerName || null,
     });
 
     return NextResponse.json(

@@ -83,11 +83,11 @@ export function proxy(request) {
     return NextResponse.next();
   }
 
-  // 3. USER PORTAL ROUTES (/portal/*)
+  // 3. ORGANIZER & OPERATIONS PORTAL ROUTES (/portal/*)
   if (pathname.startsWith("/portal")) {
     if (!user) {
       const authUrl = new URL("/auth", request.url);
-      authUrl.searchParams.set("role", "attendee");
+      authUrl.searchParams.set("role", "organizer");
       authUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(authUrl);
     }
@@ -98,13 +98,14 @@ export function proxy(request) {
   // 4. AUTH PAGE (/auth)
   if (pathname === "/auth") {
     const roleParam = request.nextUrl.searchParams.get("role");
+    if (roleParam === "attendee") {
+      return NextResponse.redirect(new URL("/events", request.url));
+    }
     if (user) {
-      // If already logged in as organizer and accessing organizer login
-      if (user.role === "organizer" && roleParam === "organizer") {
+      if (user.role === "organizer" || user.role === "admin") {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
-      // If already logged in as attendee and accessing attendee login
-      if (user.role === "attendee" && roleParam === "attendee") {
+      if (user.role === "attendee") {
         return NextResponse.redirect(new URL("/events", request.url));
       }
     }

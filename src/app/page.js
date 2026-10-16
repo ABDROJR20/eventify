@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import gsap from "gsap";
 import { ArrowRight, Compass, QrCode, BarChart3, Mail, Calendar, Bell, CreditCard, ChevronDown, Users, Menu, X, Star, CheckCircle2, Zap, Phone, MapPin, Ticket, ShieldCheck, Box, Sparkles, Plus, MessageSquare, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Eventify3DScene from "@/components/Eventify3DScene";
 import GsapBackground from "@/components/GsapBackground";
@@ -115,6 +116,7 @@ function TextRotator() {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
@@ -122,6 +124,7 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [confetti, setConfetti] = useState([]);
   const [sessionUser, setSessionUser] = useState(null);
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
 
   // Live Reviews & Platform Stats
   const [reviewsList, setReviewsList] = useState([]);
@@ -350,7 +353,7 @@ export default function Home() {
             <div className="hidden sm:flex items-center gap-2 sm:gap-3">
               {sessionUser ? (
                 <Link href={sessionUser.role === "organizer" || sessionUser.role === "admin" ? "/dashboard" : "/events"}>
-                  <button className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold pl-1.5 pr-3.5 py-1.5 rounded-full hover:border-brand-blue transition-colors">
+                  <button className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs sm:text-sm font-bold pl-1.5 pr-3.5 py-1.5 rounded-full hover:border-brand-blue transition-colors cursor-pointer">
                     <div className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-[10px] flex items-center justify-center">
                       {(sessionUser.name || "U").slice(0, 2).toUpperCase()}
                     </div>
@@ -359,8 +362,12 @@ export default function Home() {
                 </Link>
               ) : (
                 <>
-                  <Link href="/auth"><button className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-brand-blue px-3 sm:px-4 py-2 transition-colors">Sign In</button></Link>
-                  <Link href="/portal"><button className="bg-brand-blue hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all hover:shadow-lg hover:shadow-brand-blue/30 hover:-translate-y-0.5">Get Started</button></Link>
+                  <button onClick={() => setRoleModalOpen(true)} className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 hover:text-brand-blue px-3 sm:px-4 py-2 transition-colors cursor-pointer">
+                    Sign In
+                  </button>
+                  <button onClick={() => setRoleModalOpen(true)} className="bg-brand-blue hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl transition-all hover:shadow-lg hover:shadow-brand-blue/30 hover:-translate-y-0.5 cursor-pointer">
+                    Get Started
+                  </button>
                 </>
               )}
             </div>
@@ -391,16 +398,18 @@ export default function Home() {
                 </a>
               ))}
               <div className="flex flex-col gap-2 mt-2">
-                <Link href="/auth" onClick={() => setMobileOpen(false)}>
-                  <button className="w-full border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    Sign In
-                  </button>
-                </Link>
-                <Link href="/portal" onClick={() => setMobileOpen(false)}>
-                  <button className="w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg transition-all">
-                    Get Started
-                  </button>
-                </Link>
+                <button 
+                  onClick={() => { setMobileOpen(false); setRoleModalOpen(true); }}
+                  className="w-full border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  Sign In
+                </button>
+                <button 
+                  onClick={() => { setMobileOpen(false); setRoleModalOpen(true); }}
+                  className="w-full bg-brand-blue hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer"
+                >
+                  Get Started
+                </button>
               </div>
             </motion.div>
           )}
@@ -449,16 +458,17 @@ export default function Home() {
           </motion.p>
 
           <motion.div {...fadeUp(0.3)} className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 px-4 sm:px-0">
-            <Link href="/portal" className="w-full sm:w-auto flex justify-center">
-              <button className="w-full max-w-70 sm:max-w-none flex items-center justify-center gap-2 bg-brand-blue hover:bg-blue-700 text-white font-black text-base px-8 py-4 rounded-2xl shadow-[0_8px_30px_rgba(37,99,235,0.4)] transition-all hover:-translate-y-0.5 group">
-                Create Your First Event <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
+            <button 
+              onClick={() => setRoleModalOpen(true)}
+              className="w-full sm:w-auto max-w-70 sm:max-w-none flex items-center justify-center gap-2 bg-brand-blue hover:bg-blue-700 text-white font-black text-base px-8 py-4 rounded-2xl shadow-[0_8px_30px_rgba(37,99,235,0.4)] transition-all hover:-translate-y-0.5 group cursor-pointer"
+            >
+              Get Started <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
+            </button>
+            <Link href="/events" className="w-full sm:w-auto flex justify-center">
+              <button className="w-full max-w-70 sm:max-w-none text-slate-700 dark:text-slate-300 hover:text-emerald-500 font-bold text-base px-8 py-4 rounded-2xl border border-slate-300 dark:border-slate-800 hover:border-emerald-500/40 bg-white/60 dark:bg-slate-900/60 hover:bg-emerald-500/10 transition-all flex items-center justify-center gap-2 backdrop-blur-md cursor-pointer">
+                <Compass size={18} className="text-emerald-500 animate-spin-slow"/> Explore All Events
               </button>
             </Link>
-            <a href="#pass3d" className="w-full sm:w-auto flex justify-center">
-              <button className="w-full max-w-70 sm:max-w-none text-slate-700 dark:text-slate-300 hover:text-brand-blue font-bold text-base px-8 py-4 rounded-2xl border border-slate-300 dark:border-slate-800 hover:border-brand-blue/40 bg-white/60 dark:bg-slate-900/60 hover:bg-brand-blue/10 transition-all flex items-center justify-center gap-2 backdrop-blur-md">
-                <Box size={18} className="text-brand-blue animate-pulse"/> Launch 3D Experience
-              </button>
-            </a>
           </motion.div>
 
           {/* 3D Floating Dashboard Mockup */}
@@ -817,11 +827,12 @@ export default function Home() {
           </div>
           <div className="mt-16 text-center space-y-4 px-4 sm:px-0">
             <p className="text-slate-600 dark:text-slate-400 text-sm font-bold">Ready to transform your event management? Get started in minutes.</p>
-            <Link href="/portal">
-              <button className="bg-brand-blue hover:bg-blue-700 text-white font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5 w-full sm:w-auto">
-                Create Your First Event
-              </button>
-            </Link>
+            <button 
+              onClick={() => setRoleModalOpen(true)}
+              className="bg-brand-blue hover:bg-blue-700 text-white font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-xl hover:shadow-2xl transition-all hover:-translate-y-0.5 w-full sm:w-auto cursor-pointer"
+            >
+              Get Started
+            </button>
           </div>
         </div>
       </section>
@@ -1045,14 +1056,15 @@ export default function Home() {
                 <div 
                   className="absolute -inset-1 bg-linear-to-r from-pink-500 via-purple-500 to-cyan-500 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-500 pointer-events-none animate-gradient-x"
                 />
-                <Link href="/portal" className="relative z-10 block w-full">
+                <div className="relative z-10 block w-full">
                   <button 
+                    onClick={() => setRoleModalOpen(true)}
                     onMouseEnter={triggerConfetti}
-                    className="w-full bg-white text-slate-900 font-black px-8 py-4 rounded-2xl hover:bg-slate-50 transition-all shadow-xl"
+                    className="w-full bg-white text-slate-900 font-black px-8 py-4 rounded-2xl hover:bg-slate-50 transition-all shadow-xl cursor-pointer"
                   >
-                    Create Your First Event
+                    Get Started
                   </button>
-                </Link>
+                </div>
 
                 {/* Confetti Particles Container */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-visible z-20">
@@ -1232,6 +1244,103 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Role Selection Modal (Attendee vs Organizer) */}
+      {roleModalOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6 bg-slate-900/70 dark:bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 relative animate-in zoom-in-95 duration-200">
+            
+            {/* Close Button */}
+            <button 
+              onClick={() => setRoleModalOpen(false)}
+              className="absolute top-5 right-5 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Header */}
+            <div className="text-center mb-6">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-blue/10 text-brand-blue font-black text-[10px] uppercase tracking-widest mb-3">
+                <Sparkles size={12} /> Choose Your Path
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Are you an <span className="text-emerald-500">Attendee</span> or an <span className="text-brand-blue">Organizer</span>?
+              </h3>
+              <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium mt-2 max-w-md mx-auto">
+                Select your role below to go directly to events or access the organizer portal.
+              </p>
+            </div>
+
+            {/* Role Options */}
+            <div className="space-y-4">
+              
+              {/* Attendee Option */}
+              <div 
+                onClick={() => {
+                  setRoleModalOpen(false);
+                  router.push("/events");
+                }}
+                className="group p-5 sm:p-6 rounded-2xl border-2 border-emerald-500/30 hover:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all cursor-pointer shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1 relative"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 shrink-0 group-hover:scale-110 transition-transform">
+                    <Compass size={24} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        I am an Attendee
+                      </h4>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full">
+                        Direct Access
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                      Discover public events, view schedules, and register directly with Google or Gmail without any login barrier.
+                    </p>
+                    <div className="mt-3 flex items-center gap-1.5 text-xs font-black text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1.5 transition-transform">
+                      Go to Events Page <ArrowRight size={14} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Organizer Option */}
+              <div 
+                onClick={() => {
+                  setRoleModalOpen(false);
+                  router.push("/auth?role=organizer");
+                }}
+                className="group p-5 sm:p-6 rounded-2xl border-2 border-brand-blue/30 hover:border-brand-blue bg-blue-50/50 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-all cursor-pointer shadow-sm hover:shadow-xl hover:shadow-brand-blue/10 hover:-translate-y-1 relative"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-blue text-white flex items-center justify-center shadow-lg shadow-brand-blue/30 shrink-0 group-hover:scale-110 transition-transform">
+                    <BarChart3 size={24} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-brand-blue transition-colors">
+                        I am an Organizer
+                      </h4>
+                      <span className="text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-900/60 text-brand-blue dark:text-blue-300 px-2.5 py-0.5 rounded-full">
+                        Event Management
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                      Create events, generate shareable links for attendees, sell tickets, manage registrations, and track analytics.
+                    </p>
+                    <div className="mt-3 flex items-center gap-1.5 text-xs font-black text-brand-blue group-hover:translate-x-1.5 transition-transform">
+                      Organizer Sign In & Dashboard <ArrowRight size={14} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </main>
   );

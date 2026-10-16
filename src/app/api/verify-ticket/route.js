@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
-import { getAllRegistrations, getAllEvents, updateRegistration, createNotification } from "@/lib/db";
+import { 
+  getAllRegistrations, 
+  getAllEvents, 
+  updateRegistration, 
+  createNotification,
+  findTeamRoleForEventAndUser 
+} from "@/lib/db";
 import { getDatabase } from "@/lib/mongodb";
 import { MOCK_EVENTS } from "@/lib/data";
+import { getSessionUser } from "@/lib/auth";
 
 export async function GET(request) {
   try {
@@ -88,9 +95,50 @@ export async function GET(request) {
       };
     }
 
+    // Verify if caller is the organizer of this event, admin, or team member with check-in authority
+    const sessionUser = await getSessionUser();
+    let canCheckIn = false;
+    let isEventOrganizer = false;
+    let staffRole = null;
+
+    if (sessionUser) {
+      if (sessionUser.role === "admin") {
+        canCheckIn = true;
+        isEventOrganizer = true;
+        staffRole = "Platform Admin";
+      } else if (sessionUser.role === "organizer") {
+        const isOwner =
+          !event.organizerId ||
+          event.organizerId === "org_default" ||
+          event.organizerId === sessionUser.id ||
+          (event.organizerEmail && event.organizerEmail.toLowerCase() === sessionUser.email?.toLowerCase());
+
+        if (isOwner) {
+          canCheckIn = true;
+          isEventOrganizer = true;
+          staffRole = "Event Organizer";
+        }
+      }
+
+      // If not owner/admin, check if user has team role for this event with check-in authority
+      if (!canCheckIn && sessionUser.email) {
+        const memberRole = await findTeamRoleForEventAndUser(event.id, sessionUser.email);
+        if (memberRole && memberRole.permissions?.canCheckIn) {
+          canCheckIn = true;
+          isEventOrganizer = true;
+          staffRole = memberRole.roleTitle;
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       valid: true,
+      canCheckIn,
+      isEventOrganizer,
+      staffRole,
+      userRole: sessionUser ? sessionUser.role : "guest",
+      organizerName: sessionUser?.name || null,
       registration: {
         id: reg.id,
         ticketCode: reg.ticketCode,
@@ -114,6 +162,7 @@ export async function GET(request) {
         location: event.location,
         category: event.category,
         image: event.image,
+        organizerId: event.organizerId,
       },
     });
   } catch (error) {
@@ -176,6 +225,72 @@ export async function POST(request) {
     }
 
     if (action === "check-in") {
+      const sessionUser = await getSessionUser();
+
+      if (!sessionUser) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Unauthorized: Please log in to perform check-in.",
+          },
+          { status: 401 }
+        );
+      }
+
+      // Verify event ownership or team check-in authority
+      const events = await getAllEvents();
+      const event = events.find(
+        (e) => String(e.id) === String(reg.eventId) || String(e.id) === `evt_${reg.eventId}`
+      );
+
+      let isAuthorized = false;
+      let roleLabel = "Staff";
+
+      if (sessionUser.role === "admin") {
+        isAuthorized = true;
+        roleLabel = "Platform Admin";
+      } else if (sessionUser.role === "organizer") {
+        const isOwner =
+          !event?.organizerId ||
+          event.organizerId === "org_default" ||
+          event.organizerId === sessionUser.id ||
+          (event.organizerEmail && event.organizerEmail.toLowerCase() === sessionUser.email?.toLowerCase());
+
+        if (isOwner) {
+          isAuthorized = true;
+          roleLabel = "Event Organizer";
+        }
+      }
+
+      // Check if user is an invited team member for this event
+      if (!isAuthorized && event && sessionUser.email) {
+        const memberRole = await findTeamRoleForEventAndUser(event.id, sessionUser.email);
+        if (memberRole) {
+          if (memberRole.permissions?.canCheckIn) {
+            isAuthorized = true;
+            roleLabel = memberRole.roleTitle;
+          } else {
+            return NextResponse.json(
+              {
+                success: false,
+                message: `Access Denied: Aapka assigned role "${memberRole.roleTitle}" is event kay entrance check-in ki authority nahi rakhta. Organizer say check-in permission grant karwayein.`,
+              },
+              { status: 403 }
+            );
+          }
+        }
+      }
+
+      if (!isAuthorized) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Access Denied: Sirf is event ka authorized organizer ya designated gate scanner team member hi check-in kar sakta hai.`,
+          },
+          { status: 403 }
+        );
+      }
+
       if (reg.checkedIn) {
         return NextResponse.json({
           success: false,
