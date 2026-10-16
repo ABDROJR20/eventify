@@ -36,9 +36,9 @@ export default function Attendees() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [messageFeedback, setMessageFeedback] = useState(null);
 
-  const loadAttendees = async () => {
+  const loadAttendees = async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const res = await fetch("/api/organizer/attendees");
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
@@ -47,12 +47,27 @@ export default function Attendees() {
     } catch (err) {
       console.error("Failed to load attendees:", err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadAttendees();
+    loadAttendees(false);
+
+    // Live background polling so guestlist stays updated without page reload
+    const pollInterval = setInterval(() => {
+      loadAttendees(true);
+    }, 12000);
+
+    const onWindowFocus = () => {
+      loadAttendees(true);
+    };
+    window.addEventListener("focus", onWindowFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener("focus", onWindowFocus);
+    };
   }, []);
 
   const removeAttendee = async (id) => {

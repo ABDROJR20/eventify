@@ -117,6 +117,22 @@ export default function EventDetails({ params }) {
 
     loadEventData();
     loadUser();
+
+    // Auto-refresh event data silently every 10 seconds (seats, schedule, prices)
+    const interval = setInterval(() => {
+      loadEventData();
+    }, 10000);
+
+    const handleFocus = () => {
+      loadEventData();
+      loadUser();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [eventId]);
 
   // Google 1-Click Login for Attendees

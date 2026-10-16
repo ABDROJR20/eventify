@@ -90,10 +90,15 @@ flowchart TD
 - **Live Database Search**: Real-time queries for upcoming events, dates, venues, categories, and ticket tier pricing.
 - **Context-Aware Navigation**: Guides users with direct action links to event pages and ticket scanners without forcing attendee logins.
 
-### 2. 🛡️ Public Venue QR Check-In Scanner (`/verify-ticket`)
-- **Sub-Second Ticket Verification**: Camera QR code scanning or manual code lookup (`EVT-XXXXX`).
-- **Anti-Fraud & Duplicate Prevention**: Instantly flags already checked-in tickets and invalid codes.
-- **Live Audio & Haptic Feedback**: Positive check-in chimes and alert sounds for staff verification desks.
+### 2. 🛡️ Interactive Camera QR Code Scanner & Dual Verification (`/verify-ticket`)
+- **Live Camera QR Viewfinder**: Integrated with `Html5Qrcode` featuring a live viewfinder, animated glowing laser scanning beam, and reticle targeting.
+- **Smart Camera Detection**: Automatically selects the smartphone's rear environment camera (`facingMode: "environment"`), with front/back camera switching and photo gallery QR upload fallback.
+- **Dual-Mode Verification Desk**:
+  - **Mode 1 — Live Camera Scanning**: Point camera at attendee's digital pass or printed QR code for sub-second recognition.
+  - **Mode 2 — Manual Code Entry**: Fallback input allowing staff to type unique ticket codes (`EVT-XXXXX` or Order IDs) with instant pass unlock.
+- **Role-Based Gate Security**: Automatically recognizes authorized gate staff and organizers via session lookup (`findTeamRoleForEventAndUser`), enabling 1-tap entrance check-in controls while keeping sensitive revenue data hidden.
+- **Anti-Fraud Duplicate Prevention**: Instantly alerts staff with prominent warning banners if a pass was already scanned (`⚠️ Already Checked In at [Time]`).
+- **Web Audio & Haptic Feedback**: Dynamic confirmation chimes (via Web Audio API) and vibration patterns on smartphones for rapid gate queue throughput.
 
 ### 3. 🔔 Real-Time In-App Notification Center
 - **Interactive Notification Bell**: Integrated across the Organizer Dashboard, Events Catalog, and Navigation Bars.
@@ -110,6 +115,21 @@ flowchart TD
 - **Database-Driven Statistics**: Landing page metrics (Total Events, Passes Booked, Average Community Rating) calculated dynamically from MongoDB.
 - **Live Community Reviews Engine**: Real feedback fetched via `/api/reviews` with 1-5 star ratings, verified attendee badges, event tags, and reviewer avatars.
 - **Interactive "Write a Review" Modal**: Attendees and creators can submit ratings and feedback with real-time UI updates.
+
+### 6. ⚡ Platform-Wide Real-Time Auto-Refresh & Background State Sync
+- **Zero Browser Reloads**: Eliminates the need for users, attendees, or organizers to press the browser refresh button.
+- **Silent Background Polling (10-12s) + Window Focus Revalidation**:
+  - **Public Events Catalog (`/events`)**: Automatically refreshes when organizers publish or edit events, or when ticket tiers sell out.
+  - **Individual Event Details (`/events/[id]`)**: Live seat availability, tier changes, and schedule updates sync silently in the background.
+  - **Main Landing Page (`/`)**: Live database platform metrics and community reviews engine update without reload.
+  - **Organizer Management Hub (`/dashboard/*`)**: Live revenue numbers, ticket sales count, check-in stats, guestlist, staff roles, and orders update silently without page flicker or skeleton reloads.
+  - **Global Notification Bell**: Real-time counter and alert synchronization.
+
+### 7. 📧 High-Deliverability Transactional Email Engine
+- **Multipart/Alternative Architecture**: Dispatches both human-readable plain text (`text: ...`) and responsive HTML bodies across all emails (ticket passes, team invitations, broadcasts, OTPs) to maximize Primary Inbox placement and eliminate Gmail spam triggers.
+- **Standard RFC Deliverability Headers**: Configured with `X-Mailer`, `X-Priority: 1`, `Importance: high`, and `Reply-To` headers.
+- **Team Role Delegation Invites**: Automated invitation emails featuring assigned position titles, an authority checklist with green checkmarks (`✓`), and 1-click action buttons leading straight to the gate check-in desk (`/verify-ticket`).
+- **Dynamic Scannable Pass Delivery**: Instant order confirmation emails with scannable QR ticket passes and event logistics.
 
 ---
 

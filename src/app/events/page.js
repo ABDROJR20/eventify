@@ -45,21 +45,21 @@ export default function EventsPage() {
       setSelectedCurrency(savedCurrency);
     }
 
-    async function loadEvents() {
+    async function loadEvents(silent = false) {
       try {
-        setLoadingEvents(true);
+        if (!silent) setLoadingEvents(true);
         const res = await fetch("/api/events?all=true");
         const data = await res.json();
         if (data.success && Array.isArray(data.events) && data.events.length > 0) {
           setEventsList(data.events);
-        } else {
+        } else if (!silent) {
           setEventsList(MOCK_EVENTS);
         }
       } catch (err) {
         console.warn("Failed to fetch dynamic events, using fallback:", err);
-        setEventsList(MOCK_EVENTS);
+        if (!silent) setEventsList(MOCK_EVENTS);
       } finally {
-        setLoadingEvents(false);
+        if (!silent) setLoadingEvents(false);
       }
     }
 
@@ -75,8 +75,25 @@ export default function EventsPage() {
       }
     }
 
-    loadEvents();
+    loadEvents(false);
     loadUser();
+
+    // Auto-refresh events silently every 10 seconds
+    const interval = setInterval(() => {
+      loadEvents(true);
+    }, 10000);
+
+    // Auto-refresh when attendee returns to browser tab
+    const handleFocus = () => {
+      loadEvents(true);
+      loadUser();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const handleCurrencyChange = (curr) => {

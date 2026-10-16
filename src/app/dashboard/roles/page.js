@@ -107,9 +107,9 @@ export default function TeamRolesPage() {
   const [deletingId, setDeletingId] = useState(null);
 
   // Fetch Team Roles & Events
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const [rolesRes, eventsRes] = await Promise.all([
         fetch("/api/organizer/roles"),
         fetch("/api/organizer/events"),
@@ -131,12 +131,27 @@ export default function TeamRolesPage() {
     } catch (err) {
       console.error("Error loading team roles:", err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(false);
+
+    // Live background polling so team roles stay fresh
+    const pollInterval = setInterval(() => {
+      loadData(true);
+    }, 12000);
+
+    const onWindowFocus = () => {
+      loadData(true);
+    };
+    window.addEventListener("focus", onWindowFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener("focus", onWindowFocus);
+    };
   }, []);
 
   // Handle Preset selection

@@ -41,9 +41,9 @@ export default function Registrations() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Load registrations from API
-  const loadRegistrations = async (selectedCurrency = currency, query = searchQuery, status = statusFilter) => {
+  const loadRegistrations = async (selectedCurrency = currency, query = searchQuery, status = statusFilter, silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const params = new URLSearchParams({
         currency: selectedCurrency,
       });
@@ -61,18 +61,33 @@ export default function Registrations() {
     } catch (err) {
       console.error("Failed to fetch registrations:", err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadRegistrations(currency, searchQuery, statusFilter);
+    loadRegistrations(currency, searchQuery, statusFilter, false);
+
+    // Live background polling so orders list stays updated in real time
+    const pollInterval = setInterval(() => {
+      loadRegistrations(currency, searchQuery, statusFilter, true);
+    }, 12000);
+
+    const onWindowFocus = () => {
+      loadRegistrations(currency, searchQuery, statusFilter, true);
+    };
+    window.addEventListener("focus", onWindowFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener("focus", onWindowFocus);
+    };
   }, [currency, statusFilter]);
 
   // Handle live search with debounce
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadRegistrations(currency, searchQuery, statusFilter);
+      loadRegistrations(currency, searchQuery, statusFilter, false);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);

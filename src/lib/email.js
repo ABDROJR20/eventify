@@ -458,12 +458,37 @@ export async function sendTicketEmail({
     </html>
   `;
 
+  const plainText = `
+Your Eventify Ticket Confirmation
+--------------------------------
+Event: ${eventTitle}
+Date & Time: ${eventDate} at ${eventTime}
+Location: ${eventLocation}
+Ticket Tier: ${ticketType}
+Ticket Code: ${ticketCode}
+Amount: ${amount}
+
+Access your digital QR ticket pass here:
+${verifyUrl}
+
+Present your digital pass or QR code at venue entrance.
+Eventify Ticketing Platform.
+`;
+
   try {
+    const senderEmail = process.env.EMAIL_USER || "hafizabdullah.munawar786@gmail.com";
     const info = await transporter.sendMail({
-      from: `"Eventify Tickets" <${process.env.EMAIL_USER || "hafizabdullah.munawar786@gmail.com"}>`,
+      from: `"Eventify Tickets" <${senderEmail}>`,
       to: toEmail,
-      subject: `🎟️ Ticket Confirmed: ${eventTitle} (${ticketCode})`,
+      replyTo: senderEmail,
+      subject: `Ticket Confirmed: ${eventTitle} [Pass ${ticketCode}]`,
+      text: plainText.trim(),
       html: htmlContent,
+      headers: {
+        "X-Mailer": "Eventify Ticketing Service",
+        "X-Priority": "1",
+        "Importance": "high",
+      },
     });
     return { success: true, messageId: info.messageId };
   } catch (error) {
@@ -629,12 +654,38 @@ export async function sendTeamInviteEmail({
     </html>
   `;
 
+  const plainText = `
+Event Team Invitation from ${organizerName}
+------------------------------------------
+Hello ${inviteeName},
+
+${organizerName} has invited you to join their event management team on Eventify.
+Assigned Position: ${roleTitle}
+Event: ${eventTitle}
+
+Designated Authorities:
+${authoritiesList.length > 0 ? authoritiesList.map(a => `- ${a}`).join("\n") : "- View-only event member access"}
+
+Accept and access the event portal using this link:
+${inviteUrl}
+
+Eventify Team Management.
+`;
+
   try {
+    const senderEmail = process.env.EMAIL_USER || "hafizabdullah.munawar786@gmail.com";
     const info = await transporter.sendMail({
-      from: `"${organizerName} via Eventify" <${process.env.EMAIL_USER || "hafizabdullah.munawar786@gmail.com"}>`,
+      from: `"${organizerName} via Eventify" <${senderEmail}>`,
       to: toEmail,
-      subject: `🎯 Team Invitation: ${roleTitle} for "${eventTitle}"`,
+      replyTo: senderEmail,
+      subject: `Team Invitation: ${roleTitle} for "${eventTitle}"`,
+      text: plainText.trim(),
       html: htmlContent,
+      headers: {
+        "X-Mailer": "Eventify Team Roles Service",
+        "X-Priority": "1",
+        "Importance": "high",
+      },
     });
     return { success: true, messageId: info.messageId };
   } catch (error) {

@@ -39,9 +39,18 @@ export default function NotificationBell({ role = "organizer", className = "" })
 
   useEffect(() => {
     fetchNotifications();
-    // Realtime polling every 20 seconds
-    const interval = setInterval(fetchNotifications, 20000);
-    return () => clearInterval(interval);
+    // Realtime polling every 10 seconds
+    const interval = setInterval(fetchNotifications, 10000);
+
+    const handleFocus = () => {
+      fetchNotifications();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   // Close dropdown on click outside

@@ -63,9 +63,9 @@ export default function Dashboard() {
   const [createEventLoading, setCreateEventLoading] = useState(false);
 
   // Fetch Dashboard overview on load or filter change
-  const loadDashboardData = async (selectedRange = trendRange, selectedCurrency = currency, sDate = customStartDate, eDate = customEndDate) => {
+  const loadDashboardData = async (selectedRange = trendRange, selectedCurrency = currency, sDate = customStartDate, eDate = customEndDate, silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const params = new URLSearchParams({
         range: selectedRange,
         currency: selectedCurrency,
@@ -92,13 +92,29 @@ export default function Dashboard() {
     } catch (err) {
       console.error("Error loading dashboard data:", err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDashboardData(trendRange, currency, customStartDate, customEndDate);
-  }, [trendRange, currency]);
+    loadDashboardData(trendRange, currency, customStartDate, customEndDate, false);
+
+    // Live background polling every 12 seconds so data updates automatically without browser refresh
+    const pollInterval = setInterval(() => {
+      loadDashboardData(trendRange, currency, customStartDate, customEndDate, true);
+    }, 12000);
+
+    // Auto-refresh when organizer focuses back onto this window/tab
+    const onWindowFocus = () => {
+      loadDashboardData(trendRange, currency, customStartDate, customEndDate, true);
+    };
+    window.addEventListener("focus", onWindowFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener("focus", onWindowFocus);
+    };
+  }, [trendRange, currency, customStartDate, customEndDate]);
 
   // Handle custom date apply
   const handleApplyCustomDate = (e) => {
@@ -106,7 +122,7 @@ export default function Dashboard() {
     if (customStartDate && customEndDate) {
       setTrendRange("custom");
       setShowCustomDatePicker(false);
-      loadDashboardData("custom", currency, customStartDate, customEndDate);
+      loadDashboardData("custom", currency, customStartDate, customEndDate, false);
     }
   };
 

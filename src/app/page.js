@@ -160,8 +160,9 @@ export default function Home() {
       }
     }
 
-    async function loadReviewsAndStats() {
+    async function loadReviewsAndStats(silent = false) {
       try {
+        if (!silent) setLoadingReviews(true);
         const res = await fetch("/api/reviews");
         const data = await res.json();
         if (data.success) {
@@ -175,12 +176,29 @@ export default function Home() {
       } catch (err) {
         console.warn("Could not fetch reviews:", err);
       } finally {
-        setLoadingReviews(false);
+        if (!silent) setLoadingReviews(false);
       }
     }
 
     checkAuth();
-    loadReviewsAndStats();
+    loadReviewsAndStats(false);
+
+    // Live background polling so landing stats & community reviews stay up-to-date
+    const interval = setInterval(() => {
+      loadReviewsAndStats(true);
+      checkAuth();
+    }, 12000);
+
+    const handleFocus = () => {
+      loadReviewsAndStats(true);
+      checkAuth();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, []);
 
   const handleReviewSubmit = async (e) => {

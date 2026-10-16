@@ -75,9 +75,9 @@ export default function MyEvents() {
   });
 
   // Load events from Organizer API
-  const loadEvents = async () => {
+  const loadEvents = async (silent = false) => {
     try {
-      setIsLoading(true);
+      if (!silent) setIsLoading(true);
       const res = await fetch("/api/organizer/events");
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
@@ -86,12 +86,27 @@ export default function MyEvents() {
     } catch (err) {
       console.error("Failed to load events:", err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadEvents();
+    loadEvents(false);
+
+    // Live background polling so events list stays fresh
+    const pollInterval = setInterval(() => {
+      loadEvents(true);
+    }, 12000);
+
+    const onWindowFocus = () => {
+      loadEvents(true);
+    };
+    window.addEventListener("focus", onWindowFocus);
+
+    return () => {
+      clearInterval(pollInterval);
+      window.removeEventListener("focus", onWindowFocus);
+    };
   }, []);
 
   // Handle Create Event
