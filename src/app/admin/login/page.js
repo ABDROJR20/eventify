@@ -68,16 +68,16 @@ export default function AdminLogin() {
       </div>
 
       {/* Right side: Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 md:p-24 bg-slate-900">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-5 sm:p-8 md:p-24 bg-slate-900 min-h-screen">
         <div className="w-full max-w-md">
-          <div className="mb-14">
-            <Link href="/" className="text-brand-blue text-2xl font-black mb-6 tracking-tighter italic block hover:underline">
+          <div className="mb-10 sm:mb-14">
+            <Link href="/" className="text-brand-blue text-xl sm:text-2xl font-black mb-4 sm:mb-6 tracking-tighter italic block hover:underline">
               Eventify Admin
             </Link>
-            <h3 className="text-4xl font-black text-white mb-3 tracking-tighter leading-none">
+            <h3 className="text-2xl sm:text-4xl font-black text-white mb-2 sm:mb-3 tracking-tight leading-tight">
               System Authorization
             </h3>
-            <p className="text-slate-400 font-medium text-lg">
+            <p className="text-slate-400 font-medium text-sm sm:text-base">
               Enter your administrative credentials to proceed.
             </p>
           </div>
@@ -89,10 +89,10 @@ export default function AdminLogin() {
             </div>
           )}
 
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
             <AuthInput
               icon={<Mail size={20} />}
-              placeholder="Admin Email (e.g. admin@eventify.com)"
+              placeholder="Admin Email (admin@eventify.com)"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

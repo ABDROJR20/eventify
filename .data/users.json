@@ -22,14 +22,14 @@
     "updatedAt": "2026-10-12T11:48:54.421Z"
   },
   {
-    "id": "usr_1791805734421_mwzyzz5",
-    "name": "Abdullah Munawar",
-    "email": "hafizabdullah.munawar786@gmail.com",
-    "password": null,
-    "role": "organizer",
-    "provider": "google",
-    "image": "https://lh3.googleusercontent.com/a/ACg8ocLnfV6v9AmZNQBy73ZJTcLI7mT5A_hfeb_2CHDLjKFRjgkLiSzw=s96-c",
-    "createdAt": "2026-10-12T11:48:54.421Z",
-    "updatedAt": "2026-10-12T11:48:54.421Z"
+    "id": "usr_1792830835763_xsm4rue",
+    "name": "System Administrator",
+    "email": "admin@eventify.com",
+    "password": "$2b$10$mAfj7.VRT1ceWLeJqpIkJefOkA3MsA.Fl6kKIIGo5sq/AuS2s0bNS",
+    "role": "admin",
+    "provider": "credentials",
+    "image": null,
+    "createdAt": "2026-10-24T08:33:55.763Z",
+    "updatedAt": "2026-10-24T08:33:55.763Z"
   }
 ]
